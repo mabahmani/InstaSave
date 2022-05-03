@@ -2,7 +2,11 @@ package com.mabahmani.instasave.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple200 = Color(0xFFBB86FC)
-val Purple500 = Color(0xFF6200EE)
-val Purple700 = Color(0xFF3700B3)
-val Teal200 = Color(0xFF03DAC5)
+val White = Color(0xFFFFFFFF)
+val Black = Color(0xFF000000)
+val BlueGrey50 = Color(0xFFECEFF1)
+val BlueGrey200 = Color(0xFFB0BEC5)
+val BlueGrey900 = Color(0xFF000A12)
+val Grey50 = Color(0xFFFAFAFA)
+val Grey300 = Color(0xFFE0E0E0)
+val Grey900 = Color(0xFF212121)
