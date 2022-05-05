@@ -2,7 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.mabahmani.instasave">
 
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
     <application
+        android:name=".InstaSaveApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -10,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.InstaSave">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.intro.IntroActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/SplashTheme">

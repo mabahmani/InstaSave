@@ -4,4 +4,6 @@
     <string name="grant">GRANT</string>
     <string name="intro">Intro</string>
     <string name="permission">Permission</string>
+    <string name="login_to_instagram_account">In case of download medias you must log in to your instagram account</string>
+    <string name="login">Login</string>
 </resources>
