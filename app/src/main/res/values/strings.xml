@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">InstaSave</string>
+    <string name="allow_storage_permission">Please allow storage permission to store medias</string>
+    <string name="grant">GRANT</string>
+    <string name="intro">Intro</string>
+    <string name="permission">Permission</string>
 </resources>

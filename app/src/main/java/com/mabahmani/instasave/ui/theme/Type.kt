@@ -15,6 +15,10 @@ private val Ubuntu = FontFamily(
     Font(R.font.ubuntu_bold, FontWeight.Bold)
 )
 
+val Cookie = FontFamily(
+    Font(R.font.cookie, FontWeight.Normal)
+)
+
 val Typography = Typography(
 
     defaultFontFamily = Ubuntu,
