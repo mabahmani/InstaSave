@@ -10,7 +10,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
@@ -24,25 +27,27 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mabahmani.instasave.R
+import com.mabahmani.instasave.ui.login.LoginActivity
+import com.mabahmani.instasave.ui.main.MainActivity
 import com.mabahmani.instasave.ui.theme.Cookie
 import com.mabahmani.instasave.ui.theme.InstaSaveTheme
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 
 
 @AndroidEntryPoint
 class IntroActivity : ComponentActivity() {
 
-    private val introViewModel: IntroViewModel by viewModels()
+    private val viewModel: IntroViewModel by viewModels()
 
+    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
-        setTheme(R.style.Theme_InstaSave)
 
         setContent {
             InstaSaveTheme {
 
-                val state = introViewModel.introUiState.collectAsState()
+                val state = viewModel.introUiState.collectAsState()
 
                 val appBarTitle = remember {
                     mutableStateOf("")
@@ -56,25 +61,44 @@ class IntroActivity : ComponentActivity() {
                     mutableStateOf("")
                 }
 
+                val visible = remember { mutableStateOf(false) }
+
                 when (state.value) {
-                    IntroUiState.Loading -> {}
-                    IntroUiState.NavigateToLoginScreen -> {}
-                    IntroUiState.NavigateToMainScreen -> {}
+
+                    IntroUiState.Loading -> {
+                        visible.value = false
+                    }
+
+                    IntroUiState.NavigateToMainScreen -> {
+                        startActivity(Intent(this, MainActivity::class.java))
+                        finish()
+                    }
+
+                    IntroUiState.NavigateToLoginScreen -> {
+                        startActivity(Intent(this, LoginActivity::class.java))
+                        finish()
+                    }
+
                     IntroUiState.RequestStoragePermission -> {
                         requestPermissionLauncher.launch(
                             Manifest.permission.WRITE_EXTERNAL_STORAGE
                         )
                     }
+
                     IntroUiState.ShowNeedLoginUi -> {
+                        visible.value = true
                         appBarTitle.value = getString(R.string.login)
                         title.value = getString(R.string.login_to_instagram_account)
                         buttonText.value = getString(R.string.login)
                     }
+
                     IntroUiState.ShowShouldAllowPermissionStorageUi -> {
+                        visible.value = true
                         appBarTitle.value = getString(R.string.permission)
                         title.value = getString(R.string.allow_storage_permission)
                         buttonText.value = getString(R.string.grant)
                     }
+
                     IntroUiState.NavigateToSettingScreen -> {
                         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                         val uri: Uri = Uri.fromParts("package", packageName, null)
@@ -83,22 +107,28 @@ class IntroActivity : ComponentActivity() {
                     }
                 }
 
-                Column(modifier = Modifier.fillMaxSize()) {
-                    Text(
-                        text = appBarTitle.value,
-                        style = MaterialTheme.typography.h2,
-                        color = MaterialTheme.colors.primary,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                    Divider(color = MaterialTheme.colors.primaryVariant, thickness = 1.dp)
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colors.background
+                AnimatedVisibility(visible = visible.value) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colors.background)
                     ) {
-                        IntroAction(
-                            title.value,
-                            buttonText.value
+                        Text(
+                            text = appBarTitle.value,
+                            style = MaterialTheme.typography.h2,
+                            color = MaterialTheme.colors.primary,
+                            modifier = Modifier.padding(16.dp)
                         )
+                        Divider(color = MaterialTheme.colors.primaryVariant, thickness = 1.dp)
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colors.background
+                        ) {
+                            IntroAction(
+                                title.value,
+                                buttonText.value
+                            )
+                        }
                     }
                 }
 
@@ -130,7 +160,7 @@ class IntroActivity : ComponentActivity() {
             )
             Spacer(modifier = Modifier.height(32.dp))
             Button(
-                onClick = { introViewModel.onIntroActionClicked() },
+                onClick = { viewModel.onIntroActionClicked() },
                 colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
                 border = BorderStroke(1.dp, MaterialTheme.colors.primary),
                 elevation = null,
@@ -151,16 +181,13 @@ class IntroActivity : ComponentActivity() {
             ActivityResultContracts.RequestPermission()
         ) { isGranted: Boolean ->
             if (isGranted) {
-                introViewModel.onPermissionGranted()
-            }
-            else{
+                viewModel.onPermissionGranted()
+            } else {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    introViewModel.onPermissionDenied(shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE))
-                }
-
-                else{
-                    introViewModel.onPermissionDenied(true)
+                    viewModel.onPermissionDenied(shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE))
+                } else {
+                    viewModel.onPermissionDenied(true)
                 }
             }
         }

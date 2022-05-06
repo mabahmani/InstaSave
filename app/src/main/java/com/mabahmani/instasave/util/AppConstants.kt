@@ -5,5 +5,10 @@ object AppConstants {
         const val NAME = "InstaSaveSharedPrefs"
         const val USER_IS_LOGGED_IN = "USER_IS_LOGGED_IN"
         const val PERMISSION_FIRST_TIME_DENIED = "PERMISSION_FIRST_TIME_DENIED"
+        const val COOKIE = "COOKIE"
+    }
+
+    object Urls{
+        const val INSTA_LOGIN = "https://www.instagram.com/accounts/login/"
     }
 }
