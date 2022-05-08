@@ -6,4 +6,6 @@
     <string name="permission">Permission</string>
     <string name="login_to_instagram_account">In case of download medias you must log in to your instagram account</string>
     <string name="login">Login</string>
+    <string name="live_streams">Live Streams</string>
+    <string name="no_live_streams">There is no live streams</string>
 </resources>

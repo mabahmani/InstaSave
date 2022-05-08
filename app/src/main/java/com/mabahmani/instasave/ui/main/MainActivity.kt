@@ -3,8 +3,7 @@ package com.mabahmani.instasave.ui.main
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -119,8 +118,9 @@ class MainActivity : ComponentActivity() {
         Scaffold(
             bottomBar = { BottomNavigation(navController = navController) }
         ) {
-
-            NavigationGraph(navController = navController)
+            Box(modifier = Modifier.padding(0.dp, 0.dp, 0.dp, it.calculateBottomPadding())) {
+                NavigationGraph(navController = navController)
+            }
         }
     }
 }
