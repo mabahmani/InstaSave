@@ -3,6 +3,7 @@ package com.mabahmani.instasave.ui.main
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Icon
@@ -19,14 +20,22 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.mabahmani.instasave.data.api.ApiService
 import com.mabahmani.instasave.ui.main.download.DownloadScreen
 import com.mabahmani.instasave.ui.main.home.HomeScreen
 import com.mabahmani.instasave.ui.main.livestream.LiveStreamScreen
+import com.mabahmani.instasave.ui.main.livestream.LiveStreamViewModel
 import com.mabahmani.instasave.ui.main.search.SearchScreen
 import com.mabahmani.instasave.ui.main.story.StoryScreen
 import com.mabahmani.instasave.ui.theme.InstaSaveTheme
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
