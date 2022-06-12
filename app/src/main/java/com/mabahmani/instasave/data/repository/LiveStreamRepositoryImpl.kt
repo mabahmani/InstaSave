@@ -17,11 +17,12 @@ class LiveStreamRepositoryImpl @Inject constructor(private val remoteDataSource:
             return Result.success(
                 result.getOrNull()?.broadcasts?.map {
                     LiveStream(
+                        it?.id.orZero(),
                         it?.coverFrameUrl.orEmpty(),
                         it?.broadcastOwner?.profilePicUrl.orEmpty(),
                         it?.broadcastOwner?.username.orEmpty(),
                         DateUtils.getRelativeTimeSpanString(it?.publishedTime.orZero() * 1000, System.currentTimeMillis(), DateUtils.SECOND_IN_MILLIS).toString(),
-                        it?.dashPlaybackUrl.toString()
+                        it?.dashAbrPlaybackUrl.toString()
                     )
                 } ?: listOf()
             )

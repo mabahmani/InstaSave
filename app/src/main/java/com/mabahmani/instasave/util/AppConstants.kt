@@ -11,4 +11,11 @@ object AppConstants {
     object Urls{
         const val INSTA_LOGIN = "https://www.instagram.com/accounts/login/"
     }
+
+    object Args{
+        const val MODEL = "MODEL"
+        const val URL = "URL"
+        const val ID = "ID"
+        const val USERNAME = "USERNAME"
+    }
 }

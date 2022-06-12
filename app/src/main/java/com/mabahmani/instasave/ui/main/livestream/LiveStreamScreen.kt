@@ -1,10 +1,8 @@
 package com.mabahmani.instasave.ui.main.livestream
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
@@ -15,13 +13,14 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,7 +30,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.mabahmani.instasave.R
 import com.mabahmani.instasave.domain.model.LiveStream
+import com.mabahmani.instasave.service.DownloadLiveStreamsService
 import com.mabahmani.instasave.ui.common.EmptyView
+import com.mabahmani.instasave.util.AppConstants
+import com.mabahmani.instasave.util.NotificationHelper
 import timber.log.Timber
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -39,6 +41,8 @@ import timber.log.Timber
 fun LiveStreamScreen(
     viewModel: LiveStreamViewModel = hiltViewModel()
 ) {
+
+    val mContext = LocalContext.current
 
     LaunchedEffect(true) {
         viewModel.launch()
@@ -88,7 +92,44 @@ fun LiveStreamScreen(
                     items(
                         items = (state.value as LiveStreamUiState.ShowLiveStreams).liveStreams
                     ) {
-                        Box(modifier = Modifier.padding(1.dp)) {
+
+                        Box(modifier = Modifier
+                            .padding(1.dp)
+                            .clickable {
+
+
+                                if (it.downloadState.value == LiveStream.DownloadState.DOWNLOADING) {
+                                    mContext.startService(
+                                        Intent(
+                                            mContext,
+                                            DownloadLiveStreamsService::class.java
+                                        ).apply {
+                                            action = NotificationHelper.STOP_RECORDING_LIVE
+                                            putExtra(AppConstants.Args.ID, it.id)
+                                            putExtra(AppConstants.Args.USERNAME, it.username)
+                                            putExtra(AppConstants.Args.URL, it.playbackUrl)
+                                        }
+                                    )
+
+                                    it.downloadState.value = LiveStream.DownloadState.COMPLETED
+
+                                } else {
+                                    mContext.startService(
+                                        Intent(
+                                            mContext,
+                                            DownloadLiveStreamsService::class.java
+                                        ).apply {
+                                            putExtra(AppConstants.Args.ID, it.id)
+                                            putExtra(AppConstants.Args.USERNAME, it.username)
+                                            putExtra(AppConstants.Args.URL, it.playbackUrl)
+                                        }
+                                    )
+
+                                    it.downloadState.value = LiveStream.DownloadState.DOWNLOADING
+
+                                }
+
+                            }) {
                             Box(modifier = Modifier.background(color = MaterialTheme.colors.secondaryVariant)) {
                                 Image(
                                     painter = rememberAsyncImagePainter(model = it.preview),
@@ -99,7 +140,7 @@ fun LiveStreamScreen(
                                     contentScale = ContentScale.FillBounds
                                 )
 
-                                this@Column.AnimatedVisibility(visible = it.isDownloading) {
+                                this@Column.AnimatedVisibility(visible = it.downloadState.value != LiveStream.DownloadState.IDLE) {
                                     Box(
                                         modifier = Modifier
                                             .align(Alignment.TopEnd)
@@ -111,7 +152,16 @@ fun LiveStreamScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = stringResource(R.string.downloading),
+                                            text = kotlin.run {
+                                                when (it.downloadState.value) {
+                                                    LiveStream.DownloadState.DOWNLOADING -> stringResource(R.string.downloading)
+                                                    LiveStream.DownloadState.MERGING -> stringResource(R.string.merging)
+                                                    LiveStream.DownloadState.COMPLETED -> stringResource(R.string.completed)
+                                                    else -> {
+                                                        stringResource(R.string.completed)
+                                                    }
+                                                }
+                                            },
                                             textAlign = TextAlign.Center,
                                             color = MaterialTheme.colors.primaryVariant,
                                             modifier = Modifier.padding(4.dp, 4.dp),

@@ -1,10 +1,12 @@
 package com.mabahmani.instasave.ui.main.livestream
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mabahmani.instasave.data.api.response.Failure
 import com.mabahmani.instasave.domain.interactor.GetCurrentLiveStreamsUseCase
-import com.mabahmani.instasave.ui.intro.IntroUiState
+import com.mabahmani.instasave.domain.model.LiveStream
+import com.mabahmani.instasave.service.DownloadLiveStreamsService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +35,11 @@ class LiveStreamViewModel @Inject constructor(
                 }
 
                 else{
+                    Timber.d("liveStreams %s", liveStreams)
+                    liveStreams.forEach {
+                        if (DownloadLiveStreamsService.isDownloading(it.id))
+                            it.downloadState.value = LiveStream.DownloadState.DOWNLOADING
+                    }
                     _liveStreamUiState.emit(LiveStreamUiState.ShowLiveStreams(liveStreams))
                 }
 
