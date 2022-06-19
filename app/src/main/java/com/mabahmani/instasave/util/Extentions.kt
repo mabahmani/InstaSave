@@ -2,9 +2,12 @@ package com.mabahmani.instasave.util
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.mabahmani.instasave.data.api.response.Failure
 import io.ktor.client.features.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 fun Long?.orZero(): Long{
@@ -31,4 +34,16 @@ fun Context.networkConnectionAvailable(): Boolean{
     val connectivityManager = this.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
     val activeNetworkInfo = connectivityManager!!.activeNetworkInfo
     return activeNetworkInfo != null && activeNetworkInfo.isConnected
+}
+
+fun Long.timeStampToHumanReadable(): String{
+    return SimpleDateFormat("EEE, d MMM yyyy", Locale.US).format(this)
+}
+
+fun Context.toast(msg: String){
+    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+}
+
+fun Int.toPercentString(): String{
+    return "$this%"
 }

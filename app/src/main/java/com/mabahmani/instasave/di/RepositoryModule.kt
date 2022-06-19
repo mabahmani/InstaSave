@@ -23,9 +23,9 @@ abstract class RepositoryModule {
 
 
     @Binds
-    abstract fun bindMediaRepository(
-        mediaRepositoryImpl: MediaRepositoryImpl
-    ): MediaRepository
+    abstract fun bindDownloadRepository(
+        downloadRepositoryImpl: DownloadRepositoryImpl
+    ): DownloadRepository
 
 
     @Binds

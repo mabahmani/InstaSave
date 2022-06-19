@@ -8,7 +8,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.mabahmani.instasave.R
 
-private val Ubuntu = FontFamily(
+val Ubuntu = FontFamily(
     Font(R.font.ubuntu_light, FontWeight.Light),
     Font(R.font.ubuntu_regular, FontWeight.Normal),
     Font(R.font.ubuntu_medium, FontWeight.Medium),

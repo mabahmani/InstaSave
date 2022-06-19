@@ -3,6 +3,7 @@ package com.mabahmani.instasave.data.datasource
 import android.content.Context
 import com.mabahmani.instasave.data.api.ApiService
 import com.mabahmani.instasave.data.api.response.FeedReelsTray
+import com.mabahmani.instasave.data.api.response.Media
 import com.mabahmani.instasave.data.api.safeApiCall
 import com.mabahmani.instasave.di.IoDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -20,6 +21,22 @@ class RemoteDataSourceImpl @Inject constructor(
         return withContext(ioDispatcher) {
             safeApiCall(context) {
                 apiService.getFeedReelsTray()
+            }
+        }
+    }
+
+    override suspend fun getInstagramShortLinkJsonData(url: String): Result<Media> {
+        return withContext(ioDispatcher) {
+            safeApiCall(context) {
+                apiService.getInstagramShortLinkJsonData(url)
+            }
+        }
+    }
+
+    override suspend fun getInstagramMediaJsonData(mediaId: String): Result<Media> {
+        return withContext(ioDispatcher) {
+            safeApiCall(context) {
+                apiService.getInstagramMediaJsonData(mediaId)
             }
         }
     }
