@@ -109,7 +109,7 @@ object FileHelper {
             MediaType.IMAGE -> {
                 val file = File(
                     getDownloadUserDirectory(context, username),
-                    "%s_%s.mp4".format(username, fileId)
+                    "%s_%s.jpg".format(username, fileId)
                 )
                 file.createNewFile()
                 return file
@@ -136,7 +136,7 @@ object FileHelper {
             MediaType.IMAGE -> {
                 val file = File(
                     getDownloadUserDirectory(context, username),
-                    "%s_%s.mp4".format(username, fileId)
+                    "%s_%s.jpg".format(username, fileId)
                 )
                 return file.exists()
             }

@@ -94,8 +94,13 @@ class DownloadRepositoryImpl @Inject constructor(
         }
 
         else{
+            var finalUrl = url
 
-            val result = remoteDataSource.getInstagramShortLinkJsonData(url)
+            if (url.contains('?')){
+                finalUrl = url.substring(0, url.indexOf('?'))
+            }
+
+            val result = remoteDataSource.getInstagramShortLinkJsonData(finalUrl)
 
             Timber.d("fetchLinkJsonData %s", result.getOrNull()?.items?.get(0)?.videos)
 
