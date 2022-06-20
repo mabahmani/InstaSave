@@ -47,7 +47,12 @@ data class Media(
 
         @Serializable
         data class User(
-            val username: String? = null
+            @SerialName("username")
+            val username: String? = null,
+            @SerialName("full_name")
+            val fullName: String? = null,
+            @SerialName("profile_pic_url")
+            val profilePicUrl: String? = null,
         )
 
         @Serializable

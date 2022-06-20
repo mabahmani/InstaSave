@@ -29,6 +29,10 @@ class DownloadRepositoryImpl @Inject constructor(
         localDataSource.deleteDownload(downloadEntity)
     }
 
+    override suspend fun deleteDownload(fileId: String) {
+        localDataSource.deleteDownload(fileId)
+    }
+
     override fun getAllDownloads(): Flow<List<DownloadEntity>> {
         return localDataSource.getDownloads()
     }
@@ -45,116 +49,12 @@ class DownloadRepositoryImpl @Inject constructor(
             val result = remoteDataSource.getInstagramMediaJsonData(url.substring(start + 1, end))
 
             if (result.isSuccess) {
-                val data = result.getOrNull()?.items?.get(0)
+                val jsonResult = result.getOrNull()
                 val list = mutableListOf<Download>()
 
-                if (data?.mediaType == 1){
-                    list.add(
-                        Download(
-                            0,
-                            data.id.orEmpty(),
-                            "",
-                            data.user?.username.orEmpty(),
-                            data.getBestImage()?.url.orEmpty(),
-                            data.getLowImage()?.url.orEmpty(),
-                            mutableStateOf(DownloadStatus.CREATED),
-                            mutableStateOf(0),
-                            System.currentTimeMillis(),
-                            MediaType.IMAGE,
-                            0,
-                            data.code.orEmpty(),
-                        )
-                    )
-                }
+                if (jsonResult != null && !jsonResult.items.isNullOrEmpty()){
 
-                else if (data?.mediaType == 2){
-                    list.add(
-                        Download(
-                            0,
-                            data.id.orEmpty(),
-                            "",
-                            data.user?.username.orEmpty(),
-                            data.getBestVideo()?.url.orEmpty(),
-                            data.getLowImage()?.url.orEmpty(),
-                            mutableStateOf(DownloadStatus.CREATED),
-                            mutableStateOf(0),
-                            System.currentTimeMillis(),
-                            MediaType.VIDEO,
-                            0,
-                            data.code.orEmpty(),
-                        )
-                    )
-                }
-
-                return Result.success(list)
-
-            } else {
-                return Result.failure(result.exceptionOrNull() ?: Exception())
-            }
-        }
-
-        else{
-            var finalUrl = url
-
-            if (url.contains('?')){
-                finalUrl = url.substring(0, url.indexOf('?'))
-            }
-
-            val result = remoteDataSource.getInstagramShortLinkJsonData(finalUrl)
-
-            Timber.d("fetchLinkJsonData %s", result.getOrNull()?.items?.get(0)?.videos)
-
-            if (result.isSuccess) {
-                val data = result.getOrNull()?.items?.get(0)
-                val list = mutableListOf<Download>()
-
-                if (data?.productType == "carousel_container" || data?.mediaType == 8) {
-                    data.slides?.forEach {
-
-                        if (it.mediaType == 1) {
-                            list.add(
-                                Download(
-                                    0,
-                                    it.id.orEmpty(),
-                                    "",
-                                    data.user?.username.orEmpty(),
-                                    it.getBestImage()?.url.orEmpty(),
-                                    it.getLowImage()?.url.orEmpty(),
-                                    mutableStateOf(DownloadStatus.CREATED),
-                                    mutableStateOf(0),
-                                    System.currentTimeMillis(),
-                                    MediaType.IMAGE,
-                                    0,
-                                    data.code.orEmpty(),
-                                )
-                            )
-                        }
-
-                        else if (it.mediaType == 2) {
-                            list.add(
-                                Download(
-                                    0,
-                                    it.id.orEmpty(),
-                                    "",
-                                    data.user?.username.orEmpty(),
-                                    it.getBestVideo()?.url.orEmpty(),
-                                    it.getLowImage()?.url.orEmpty(),
-                                    mutableStateOf(DownloadStatus.CREATED),
-                                    mutableStateOf(0),
-                                    System.currentTimeMillis(),
-                                    MediaType.VIDEO,
-                                    0,
-                                    data.code.orEmpty(),
-                                )
-                            )
-                        }
-
-                    }
-                }
-
-                else if (data?.productType == "feed" || data?.productType == "story"){
-
-                    Timber.d("best Video %s", data.getBestVideo())
+                    val data = jsonResult.items[0]
 
                     if (data.mediaType == 1){
                         list.add(
@@ -171,6 +71,8 @@ class DownloadRepositoryImpl @Inject constructor(
                                 MediaType.IMAGE,
                                 0,
                                 data.code.orEmpty(),
+                                data.user?.fullName.orEmpty(),
+                                data.user?.profilePicUrl.orEmpty()
                             )
                         )
                     }
@@ -190,28 +92,136 @@ class DownloadRepositoryImpl @Inject constructor(
                                 MediaType.VIDEO,
                                 0,
                                 data.code.orEmpty(),
+                                data.user?.fullName.orEmpty(),
+                                data.user?.profilePicUrl.orEmpty()
                             )
                         )
                     }
+
+                    return Result.success(list)
                 }
 
-                else if (data?.productType == "igtv"){
-                    list.add(
-                        Download(
-                            0,
-                            data.id.orEmpty(),
-                            "",
-                            data.user?.username.orEmpty(),
-                            data.getBestVideo()?.url.orEmpty(),
-                            data.getLowImage()?.url.orEmpty(),
-                            mutableStateOf(DownloadStatus.CREATED),
-                            mutableStateOf(0),
-                            System.currentTimeMillis(),
-                            MediaType.VIDEO,
-                            0,
-                            data.code.orEmpty(),
-                        )
-                    )
+                return Result.success(list)
+
+            } else {
+                return Result.failure(result.exceptionOrNull() ?: Exception())
+            }
+        }
+
+        else{
+            var finalUrl = url
+
+            if (url.contains('?')){
+                finalUrl = url.substring(0, url.indexOf('?'))
+            }
+
+            val result = remoteDataSource.getInstagramShortLinkJsonData(finalUrl)
+
+            Timber.d("fetchLinkJsonData %s", result.getOrNull()?.items?.get(0)?.productType)
+
+            if (result.isSuccess) {
+
+                val jsonResult = result.getOrNull()
+
+                val list = mutableListOf<Download>()
+
+                if (jsonResult != null && !jsonResult.items.isNullOrEmpty()){
+
+                    val data = jsonResult.items[0]
+
+                    if (data.productType == "carousel_container" || data.mediaType == 8) {
+                        data.slides?.forEach {
+
+                            if (it.mediaType == 1) {
+                                list.add(
+                                    Download(
+                                        0,
+                                        it.id.orEmpty(),
+                                        "",
+                                        data.user?.username.orEmpty(),
+                                        it.getBestImage()?.url.orEmpty(),
+                                        it.getLowImage()?.url.orEmpty(),
+                                        mutableStateOf(DownloadStatus.CREATED),
+                                        mutableStateOf(0),
+                                        System.currentTimeMillis(),
+                                        MediaType.IMAGE,
+                                        0,
+                                        data.code.orEmpty(),
+                                        data.user?.fullName.orEmpty(),
+                                        data.user?.profilePicUrl.orEmpty()
+                                    )
+                                )
+                            }
+
+                            else if (it.mediaType == 2) {
+                                list.add(
+                                    Download(
+                                        0,
+                                        it.id.orEmpty(),
+                                        "",
+                                        data.user?.username.orEmpty(),
+                                        it.getBestVideo()?.url.orEmpty(),
+                                        it.getLowImage()?.url.orEmpty(),
+                                        mutableStateOf(DownloadStatus.CREATED),
+                                        mutableStateOf(0),
+                                        System.currentTimeMillis(),
+                                        MediaType.VIDEO,
+                                        0,
+                                        data.code.orEmpty(),
+                                        data.user?.fullName.orEmpty(),
+                                        data.user?.profilePicUrl.orEmpty()
+                                    )
+                                )
+                            }
+
+                        }
+                    }
+
+                    else{
+                        if (data.mediaType == 1){
+                            list.add(
+                                Download(
+                                    0,
+                                    data.id.orEmpty(),
+                                    "",
+                                    data.user?.username.orEmpty(),
+                                    data.getBestImage()?.url.orEmpty(),
+                                    data.getLowImage()?.url.orEmpty(),
+                                    mutableStateOf(DownloadStatus.CREATED),
+                                    mutableStateOf(0),
+                                    System.currentTimeMillis(),
+                                    MediaType.IMAGE,
+                                    0,
+                                    data.code.orEmpty(),
+                                    data.user?.fullName.orEmpty(),
+                                    data.user?.profilePicUrl.orEmpty()
+                                )
+                            )
+                        }
+
+                        else if (data.mediaType == 2){
+                            list.add(
+                                Download(
+                                    0,
+                                    data.id.orEmpty(),
+                                    "",
+                                    data.user?.username.orEmpty(),
+                                    data.getBestVideo()?.url.orEmpty(),
+                                    data.getLowImage()?.url.orEmpty(),
+                                    mutableStateOf(DownloadStatus.CREATED),
+                                    mutableStateOf(0),
+                                    System.currentTimeMillis(),
+                                    MediaType.VIDEO,
+                                    0,
+                                    data.code.orEmpty(),
+                                    data.user?.fullName.orEmpty(),
+                                    data.user?.profilePicUrl.orEmpty()
+                                )
+                            )
+                        }
+                    }
+
+                    return Result.success(list)
                 }
 
                 return Result.success(list)

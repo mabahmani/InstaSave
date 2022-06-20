@@ -5,7 +5,11 @@ import androidx.room.RoomDatabase
 import com.mabahmani.instasave.data.db.dao.DownloadDao
 import com.mabahmani.instasave.data.db.entity.DownloadEntity
 
-@Database(entities = [DownloadEntity::class], version = 3, exportSchema = false)
-abstract class AppDatabase: RoomDatabase() {
+@Database(
+    entities = [DownloadEntity::class],
+    version = 4,
+    exportSchema = true
+)
+abstract class AppDatabase : RoomDatabase() {
     abstract fun downloadDao(): DownloadDao
 }

@@ -85,7 +85,7 @@ class AppModule {
             context,
             AppDatabase::class.java,
             "instaSave-db"
-        ).fallbackToDestructiveMigration().build()
+        ).build()
     }
 
     @Provides

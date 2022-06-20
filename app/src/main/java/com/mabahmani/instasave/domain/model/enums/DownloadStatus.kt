@@ -2,8 +2,9 @@ package com.mabahmani.instasave.domain.model.enums
 
 enum class DownloadStatus {
     CREATED,
-    PAUSED,
+    CONNECTING,
     DOWNLOADING,
+    PAUSED,
     FAILED,
     COMPLETED
 }

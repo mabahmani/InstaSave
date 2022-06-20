@@ -23,4 +23,6 @@ interface DownloadRepository {
     suspend fun updateDownloadStatus(fileId: String, status: DownloadStatus)
 
     suspend fun updateDownloadInfo(fileId: String, downloadStatus: DownloadStatus, filePath: String, fileName: String, fileLength: Long)
+
+    suspend fun deleteDownload(fileId: String)
 }

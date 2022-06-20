@@ -5,9 +5,11 @@ import com.mabahmani.instasave.domain.model.Download
 sealed class DownloadUiState {
     object Loading : DownloadUiState()
     object EmptyList : DownloadUiState()
-    class ShowDownloadsList(val downloads: List<Download>) : DownloadUiState()
     object FetchLinkDataFailed : DownloadUiState()
-    class AddToDownload(val downloads: List<Download>) : DownloadUiState()
     object AlreadyDownloaded : DownloadUiState()
     object ShowCheckUrlDialog : DownloadUiState()
+    object Idle : DownloadUiState()
+    class AddToDownload(val downloads: List<Download>) : DownloadUiState()
+    class ShowDeleteDialog(val download: Download) : DownloadUiState()
+    class ShowDownloadsList(val downloads: List<Download>) : DownloadUiState()
 }

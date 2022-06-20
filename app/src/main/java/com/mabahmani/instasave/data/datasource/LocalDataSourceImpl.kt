@@ -32,6 +32,10 @@ class LocalDataSourceImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteDownload(fileId: String) {
+        return downloadDao.deleteDownload(fileId)
+    }
+
     override fun getDownloads(): Flow<List<DownloadEntity>> {
         return downloadDao.getAll()
     }

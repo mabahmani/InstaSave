@@ -1,6 +1,5 @@
 package com.mabahmani.instasave.util
 
-import com.mabahmani.instasave.InstaSaveApplication
 import com.mabahmani.instasave.domain.model.Download
 import com.mabahmani.instasave.domain.model.enums.DownloadStatus
 import timber.log.Timber
@@ -21,144 +20,188 @@ object DownloadManager {
     private val downloadList = mutableListOf<Download>()
 
     fun startDownload(download: Download) {
-        Timber.d("startDownload")
-        downloadList.add(download)
+        if (!isInDownloadList(download.fileId)) {
+            Timber.d("startDownload")
+            downloadList.add(download)
 
-        download.executer = Executors.newSingleThreadExecutor()
+            download.executer = Executors.newSingleThreadExecutor()
 
-        download.executer!!.execute {
+            download.executer!!.execute {
 
-            var input: InputStream? = null
-            var output: OutputStream? = null
-            var connection: HttpURLConnection? = null
-            var file: File? = null
+                var input: InputStream? = null
+                var output: OutputStream? = null
+                var connection: HttpURLConnection? = null
+                var file: File? = null
 
-            try {
+                try {
 
-                file = FileHelper.getDownloadOutputFile(
-                    InstaSaveApplication.appContext,
-                    download.username,
-                    download.fileId,
-                    download.mediaType
-                )
+                    if (statusCallback != null) {
+                        try {
+                            statusCallback!!.invoke(
+                                download.fileId,
+                                DownloadStatus.CONNECTING
+                            )
+                        } catch (ex: Exception) {
+                            ex.printStackTrace()
+                        }
+                    }
 
-                output = if (FileHelper.isDownloadFileExists(
-                        InstaSaveApplication.appContext,
+                    file = FileHelper.getDownloadOutputFile(
                         download.username,
                         download.fileId,
                         download.mediaType
                     )
-                ) {
-                    FileOutputStream(
-                        file,
-                        true
-                    )
-                } else {
-                    file.outputStream()
-                }
 
 
-                if (statusCallback != null) {
-                    try {
-                        statusCallback!!.invoke(
-                            download.fileId,
-                            DownloadStatus.DOWNLOADING
-                        )
-                    }catch (ex: Exception){
-                        ex.printStackTrace()
+                    connection = URL(download.url).openConnection() as HttpURLConnection
+                    connection.setRequestProperty("Range", "bytes=" + file.length() + "-")
+                    connection.connect()
+
+                    var remainedSize = 0
+                    var totalSize = 0
+
+                    if (connection.contentLength < 0) {
+
+                        output = file.outputStream()
+
+                        try {
+                            totalSize =
+                                connection.getHeaderField("x-full-image-content-length").toInt()
+                            remainedSize = totalSize
+                        } catch (ex: Exception) {
+                        }
+
+                    } else {
+                        remainedSize = connection.contentLength
+                        totalSize = (file.length() + remainedSize).toInt()
+
+                        output = if (FileHelper.isDownloadFileExists(
+                                download.username,
+                                download.fileId,
+                                download.mediaType
+                            )
+                        ) {
+                            FileOutputStream(
+                                file,
+                                true
+                            )
+                        } else {
+                            file.outputStream()
+                        }
                     }
-                }
 
-                connection = URL(download.url).openConnection() as HttpURLConnection
-                connection.setRequestProperty("Range", "bytes=" + file.length() + "-")
-                connection.connect()
+                    Timber.d("downloadmanger size %s %s", remainedSize, totalSize)
 
-                val remainedSize: Int = connection.contentLength
-                val totalSize = file.length() + remainedSize
+                    if (statusCallback != null) {
+                        try {
+                            statusCallback!!.invoke(
+                                download.fileId,
+                                DownloadStatus.DOWNLOADING
+                            )
+                        } catch (ex: Exception) {
+                            ex.printStackTrace()
+                        }
+                    }
 
-                input = connection.inputStream
+                    input = connection.inputStream
 
-                val data = ByteArray(4096)
-                var count: Int
-                var sum = (totalSize - remainedSize).toFloat()
+                    val data = ByteArray(4096)
+                    var count: Int
+                    var sum = (totalSize - remainedSize).toFloat()
 
-                download.downloadProgress.value = ((sum / totalSize) * 100).toInt()
-
-                while (input!!.read(data).also { count = it } != -1) {
-                    sum += count
                     download.downloadProgress.value = ((sum / totalSize) * 100).toInt()
-                    if (progressCallback != null) {
 
-                        try {
-                            progressCallback!!.invoke(
-                                download.fileId,
-                                download.downloadProgress.value
-                            )
-                        }catch (ex: Exception){
-                            ex.printStackTrace()
-                        }
-                    }
-                    output.write(data, 0, count)
-                }
+                    while (input!!.read(data).also { count = it } != -1) {
+                        sum += count
+                        download.downloadProgress.value = ((sum / totalSize) * 100).toInt()
+                        if (progressCallback != null) {
 
-            } catch (ex: Exception) {
-                Timber.d("DownloadManager EX %s", ex)
-                ex.printStackTrace()
-                if (download.status.value == DownloadStatus.PAUSED) {
-                    if (statusCallback != null) {
-                        try {
-                            statusCallback!!.invoke(
-                                download.fileId,
-                                DownloadStatus.PAUSED
-                            )
-                        }catch (ex: Exception){
-                            ex.printStackTrace()
+                            try {
+                                progressCallback!!.invoke(
+                                    download.fileId,
+                                    download.downloadProgress.value
+                                )
+                            } catch (ex: Exception) {
+                                ex.printStackTrace()
+                            }
                         }
+                        output.write(data, 0, count)
                     }
 
-                } else {
-                    if (statusCallback != null) {
-
-                        try {
-                            statusCallback!!.invoke(
-                                download.fileId,
-                                DownloadStatus.FAILED
-                            )
-                        }catch (ex: Exception){
-                            ex.printStackTrace()
-                        }
-                    }
-                }
-
-                downloadList.remove(download)
-
-            } finally {
-                input?.close()
-                output?.close()
-                connection?.disconnect()
-
-                if (download.status.value != DownloadStatus.PAUSED && download.status.value != DownloadStatus.FAILED && download.status.value != DownloadStatus.DOWNLOADING) {
                     if (finishCallback != null) {
                         try {
                             finishCallback!!.invoke(
                                 download.fileId,
                                 DownloadStatus.COMPLETED,
-                                file?.path.orEmpty(),
-                                file?.name.orEmpty(),
-                                file?.length()?:0
+                                file.path.orEmpty(),
+                                file.name.orEmpty(),
+                                file.length() ?: 0
                             )
-                        }catch (ex: Exception){
+                        } catch (ex: Exception) {
                             ex.printStackTrace()
                         }
 
                     }
+
+                } catch (ex: Exception) {
+                    Timber.d("DownloadManager EX %s", ex)
+                    ex.printStackTrace()
+                    if (download.status.value == DownloadStatus.PAUSED) {
+                        if (statusCallback != null) {
+                            try {
+                                statusCallback!!.invoke(
+                                    download.fileId,
+                                    DownloadStatus.PAUSED
+                                )
+                            } catch (ex: Exception) {
+                                ex.printStackTrace()
+                            }
+                        }
+
+                    } else {
+                        if (statusCallback != null) {
+
+                            try {
+                                statusCallback!!.invoke(
+                                    download.fileId,
+                                    DownloadStatus.FAILED
+                                )
+                            } catch (ex: Exception) {
+                                ex.printStackTrace()
+                            }
+                        }
+                    }
+
+                    downloadList.remove(download)
+
+                } finally {
+                    input?.close()
+                    output?.close()
+                    connection?.disconnect()
+
+                    if (download.status.value != DownloadStatus.PAUSED && download.status.value != DownloadStatus.FAILED && download.status.value != DownloadStatus.DOWNLOADING) {
+                        if (finishCallback != null) {
+                            try {
+                                finishCallback!!.invoke(
+                                    download.fileId,
+                                    DownloadStatus.COMPLETED,
+                                    file?.path.orEmpty(),
+                                    file?.name.orEmpty(),
+                                    file?.length() ?: 0
+                                )
+                            } catch (ex: Exception) {
+                                ex.printStackTrace()
+                            }
+
+                        }
+                    }
+
+                    downloadList.remove(download)
                 }
-
-                downloadList.remove(download)
             }
-        }
 
-        download.executer!!.shutdown()
+            download.executer!!.shutdown()
+        }
     }
 
     fun stopDownload(fileId: String) {
@@ -170,7 +213,7 @@ object DownloadManager {
         }?.executer?.shutdownNow()
     }
 
-    fun isInDownloadList(fileId: String): Boolean{
+    fun isInDownloadList(fileId: String): Boolean {
         return downloadList.find {
             it.fileId == fileId
         } != null

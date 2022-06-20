@@ -7,14 +7,11 @@ import com.mabahmani.instasave.data.db.entity.DownloadEntity
 import com.mabahmani.instasave.domain.interactor.*
 import com.mabahmani.instasave.domain.model.Download
 import com.mabahmani.instasave.domain.model.enums.DownloadStatus
-import com.mabahmani.instasave.domain.model.enums.MediaType
-import com.mabahmani.instasave.ui.main.livestream.LiveStreamUiState
 import com.mabahmani.instasave.util.DownloadManager
+import com.mabahmani.instasave.util.FileHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -27,6 +24,7 @@ class DownloadViewModel @Inject constructor(
     private val downloadIsExistsUseCase: DownloadIsExistsUseCase,
     private val updateDownloadStatusUseCase: UpdateDownloadStatusUseCase,
     private val updateDownloadInfoUseCase: UpdateDownloadInfoUseCase,
+    private val deleteDownloadUseCase: DeleteDownloadUseCase,
 ) : ViewModel() {
 
     private val _downloadUiState = MutableStateFlow<DownloadUiState>(DownloadUiState.Loading)
@@ -40,32 +38,34 @@ class DownloadViewModel @Inject constructor(
                     _downloadUiState.emit(DownloadUiState.EmptyList)
                 } else {
                     _downloadUiState.emit(DownloadUiState.ShowDownloadsList(
-                        it.map {
+                        it.map {downloadEntity ->
                             Download(
-                                it.id,
-                                it.fileId,
-                                it.filePath,
-                                it.userName,
-                                it.url,
-                                it.previewImageUrl,
+                                downloadEntity.id,
+                                downloadEntity.fileId,
+                                downloadEntity.filePath,
+                                downloadEntity.userName,
+                                downloadEntity.url,
+                                downloadEntity.previewImageUrl,
                                 mutableStateOf(
                                     kotlin.run {
-                                        if (it.downloadStatus == DownloadStatus.DOWNLOADING.name) {
-                                            if (DownloadManager.isInDownloadList(it.fileId))
-                                                enumValueOf(it.downloadStatus)
+                                        if (downloadEntity.downloadStatus == DownloadStatus.DOWNLOADING.name || downloadEntity.downloadStatus == DownloadStatus.CONNECTING.name) {
+                                            if (DownloadManager.isInDownloadList(downloadEntity.fileId))
+                                                enumValueOf(downloadEntity.downloadStatus)
                                             else {
                                                 DownloadStatus.FAILED
                                             }
                                         } else {
-                                            enumValueOf(it.downloadStatus)
+                                            enumValueOf(downloadEntity.downloadStatus)
                                         }
                                     }
                                 ),
                                 mutableStateOf(0),
-                                it.createdAt,
-                                enumValueOf(it.mediaType),
-                                it.contentLength,
-                                it.code
+                                downloadEntity.createdAt,
+                                enumValueOf(downloadEntity.mediaType),
+                                downloadEntity.contentLength,
+                                downloadEntity.code,
+                                downloadEntity.fullName,
+                                downloadEntity.profilePictureUrl
                             )
                         }
                     ))
@@ -125,12 +125,15 @@ class DownloadViewModel @Inject constructor(
                             it.createdAt,
                             it.previewImageUrl,
                             it.status.value.name,
-                            it.mediaType.name
+                            it.mediaType.name,
+                            it.fullName,
+                            it.profilePictureUrl,
                         )
                     }
                 )
 
                 downloads.forEach {
+                    Timber.d("addToDownloads %s", it)
                     DownloadManager.startDownload(
                         it
                     )
@@ -155,6 +158,33 @@ class DownloadViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             updateDownloadInfoUseCase(fileId, downloadStatus, filePath, fileName, fileLength)
+        }
+    }
+
+    fun setIdleState(){
+        viewModelScope.launch {
+            _downloadUiState.emit(
+                DownloadUiState.Idle
+            )
+        }
+    }
+
+    fun onShowDeleteDialog(download: Download){
+        viewModelScope.launch {
+            _downloadUiState.emit(
+                DownloadUiState.ShowDeleteDialog(download)
+            )
+        }
+    }
+
+    fun deleteDownload(download: Download?, withFile: Boolean = false){
+        viewModelScope.launch {
+            if (download != null){
+                deleteDownloadUseCase(download.fileId)
+
+                if (withFile)
+                    FileHelper.deleteMediaFile(download.filePath)
+            }
         }
     }
 }

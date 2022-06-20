@@ -19,5 +19,7 @@ data class Download(
     val mediaType: MediaType,
     val fileLength: Long = 0,
     val code: String,
+    val fullName: String,
+    val profilePictureUrl: String,
     var executer: ExecutorService? = null
 )

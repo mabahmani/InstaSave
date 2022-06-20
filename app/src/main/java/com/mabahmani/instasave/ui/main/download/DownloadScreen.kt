@@ -2,14 +2,13 @@ package com.mabahmani.instasave.ui.main.download
 
 import android.content.Intent
 import android.net.Uri
+import android.text.format.Formatter
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
@@ -28,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat.startActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.mabahmani.instasave.R
@@ -44,6 +42,7 @@ import com.mabahmani.instasave.util.toast
 import timber.log.Timber
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DownloadScreen(
     sharedLink: String = "",
@@ -57,8 +56,10 @@ fun DownloadScreen(
 
     val context = LocalContext.current
     val inputValue = remember { mutableStateOf(sharedLink) }
-    val openDialog = remember { mutableStateOf(false) }
+    val openCheckUrlDialog = remember { mutableStateOf(false) }
+    val openDeleteDialog = remember { mutableStateOf(false) }
     val list = remember { mutableStateOf<List<Download>>(listOf()) }
+    val itemToDelete = remember { mutableStateOf<Download?>(null) }
 
     val state = viewModel.downloadUiState.collectAsState()
 
@@ -111,41 +112,126 @@ fun DownloadScreen(
 
     when (state.value) {
         is DownloadUiState.AddToDownload -> {
-            openDialog.value = false
+            openCheckUrlDialog.value = false
             inputValue.value = ""
             viewModel.addToDownloads((state.value as DownloadUiState.AddToDownload).downloads)
+            viewModel.setIdleState()
         }
         is DownloadUiState.ShowDownloadsList -> {
             list.value = (state.value as DownloadUiState.ShowDownloadsList).downloads
         }
 
         is DownloadUiState.AlreadyDownloaded -> {
-            LocalContext.current.toast(
+            context.toast(
                 stringResource(R.string.already_downloaded)
             )
+
+            viewModel.setIdleState()
         }
 
-        is DownloadUiState.ShowCheckUrlDialog ->{
-            openDialog.value = true
+        is DownloadUiState.ShowCheckUrlDialog -> {
+            openCheckUrlDialog.value = true
         }
 
-        is DownloadUiState.FetchLinkDataFailed ->{
-            openDialog.value = false
-
+        is DownloadUiState.FetchLinkDataFailed -> {
+            openCheckUrlDialog.value = false
             inputValue.value = ""
 
-            LocalContext.current.toast(
+            context.toast(
                 stringResource(R.string.invalid_url)
             )
+
+            viewModel.setIdleState()
+        }
+
+        is DownloadUiState.ShowDeleteDialog -> {
+            itemToDelete.value = (state.value as DownloadUiState.ShowDeleteDialog).download
+            openDeleteDialog.value = true
+            viewModel.setIdleState()
+        }
+
+        is DownloadUiState.Idle -> {
+            openCheckUrlDialog.value = false
+            inputValue.value = ""
         }
     }
 
-    if (openDialog.value){
-        Dialog(onDismissRequest = { openDialog.value = false },
+    if (openDeleteDialog.value) {
+        Dialog(
+            onDismissRequest = { openDeleteDialog.value = false },
+            DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
+        ) {
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colors.background, RoundedCornerShape(8.dp)),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    modifier = Modifier.padding(16.dp),
+                    text = stringResource(R.string.delete_download),
+                    style = MaterialTheme.typography.h5,
+                    color = MaterialTheme.colors.primary
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(9.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(
+                        onClick = {
+                            openDeleteDialog.value = false
+                            viewModel.deleteDownload(itemToDelete.value, true)
+                        }
+                    ) {
+                        Text(
+                            text = stringResource(R.string.with_file),
+                            style = MaterialTheme.typography.body2,
+                            color = MaterialTheme.colors.primary
+                        )
+                    }
+
+                    Row {
+                        TextButton(
+                            onClick = {
+                                openDeleteDialog.value = false
+                                itemToDelete.value = null
+                            }
+                        ) {
+                            Text(
+                                text = stringResource(R.string.cancel),
+                                style = MaterialTheme.typography.body2,
+                                color = MaterialTheme.colors.primary
+                            )
+                        }
+
+                        TextButton(
+                            onClick = {
+                                openDeleteDialog.value = false
+                                viewModel.deleteDownload(itemToDelete.value)
+                            }
+                        ) {
+                            Text(
+                                text = stringResource(R.string.ok),
+                                style = MaterialTheme.typography.body2,
+                                color = MaterialTheme.colors.primary
+                            )
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
+    if (openCheckUrlDialog.value) {
+        Dialog(
+            onDismissRequest = { openCheckUrlDialog.value = false },
             DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
         ) {
             Box(
-                contentAlignment= Alignment.Center,
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .background(MaterialTheme.colors.background, shape = RoundedCornerShape(12.dp))
                     .padding(16.dp)
@@ -153,9 +239,11 @@ fun DownloadScreen(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CircularProgressIndicator(modifier = Modifier
-                        .padding(6.dp, 0.dp, 0.dp, 0.dp)
-                        .size(24.dp), strokeWidth = 1.dp)
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(6.dp, 0.dp, 0.dp, 0.dp)
+                            .size(24.dp), strokeWidth = 1.dp
+                    )
                     Text(
                         text = stringResource(R.string.check_url),
                         Modifier.padding(0.dp, 8.dp, 0.dp, 0.dp),
@@ -269,49 +357,56 @@ fun DownloadScreen(
         }
 
         AnimatedVisibility(visible = state.value !is DownloadUiState.Loading && state.value !is DownloadUiState.EmptyList) {
-            LazyColumn(contentPadding = PaddingValues(top = 4.dp, start= 16.dp, end=16.dp)) {
+            LazyColumn(contentPadding = PaddingValues(top = 4.dp)) {
                 items(
                     items = list.value
                 ) {
                     Column(
                         modifier = Modifier
-                            .padding(vertical = 4.dp)
-                            .clickable {
+                            .combinedClickable(
+                                onClick = {
+                                    Timber.d("onClick")
 
-                                if (it.status.value != DownloadStatus.COMPLETED) {
-                                    if (it.status.value != DownloadStatus.DOWNLOADING) {
-                                        DownloadManager.startDownload(it)
+                                    if (it.status.value != DownloadStatus.COMPLETED) {
+                                        if (it.status.value != DownloadStatus.DOWNLOADING && it.status.value != DownloadStatus.CONNECTING) {
+                                            DownloadManager.startDownload(it)
+                                        } else {
+                                            DownloadManager.stopDownload(it.fileId)
+                                        }
                                     } else {
-                                        DownloadManager.stopDownload(it.fileId)
-                                    }
-                                } else {
-                                    val intent = Intent()
-                                    intent.action = Intent.ACTION_VIEW
+                                        val intent = Intent()
+                                        intent.action = Intent.ACTION_VIEW
 
-                                    when(it.mediaType){
-                                        MediaType.IMAGE->{
-                                            intent.setDataAndType(
-                                                Uri.parse(it.filePath),
-                                                "image/*"
-                                            )
+                                        when (it.mediaType) {
+                                            MediaType.IMAGE -> {
+                                                intent.setDataAndType(
+                                                    Uri.parse(it.filePath),
+                                                    "image/*"
+                                                )
+                                            }
+
+                                            MediaType.VIDEO -> {
+                                                intent.setDataAndType(
+                                                    Uri.parse(it.filePath),
+                                                    "video/*"
+                                                )
+                                            }
                                         }
 
-                                        MediaType.VIDEO->{
-                                            intent.setDataAndType(
-                                                Uri.parse(it.filePath),
-                                                "video/*"
-                                            )
-                                        }
+                                        context.startActivity(intent)
                                     }
 
-                                    context.startActivity(intent)
+                                },
+                                onLongClick = {
+                                    Timber.d("onLongClick")
+                                    viewModel.onShowDeleteDialog(it)
                                 }
-
-                            }) {
+                            )) {
 
                         Row(
                             Modifier
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
 
@@ -323,8 +418,8 @@ fun DownloadScreen(
                                     painter = rememberAsyncImagePainter(model = it.previewImageUrl),
                                     contentDescription = "",
                                     modifier = Modifier
-                                        .width(56.dp)
-                                        .height(56.dp)
+                                        .width(64.dp)
+                                        .height(64.dp)
                                         .clip(RoundedCornerShape(8.dp))
                                         .border(
                                             1.dp,
@@ -334,47 +429,101 @@ fun DownloadScreen(
                                     contentScale = ContentScale.Crop
                                 )
 
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
 
-                                Column {
-                                    Text(
-                                        text = it.username,
-                                        style = MaterialTheme.typography.h6,
-                                        color = MaterialTheme.colors.primary
+                                Row {
+                                    Image(
+                                        painter = rememberAsyncImagePainter(model = it.profilePictureUrl),
+                                        contentDescription = "",
+                                        modifier = Modifier
+                                            .width(32.dp)
+                                            .height(32.dp)
+                                            .clip(CircleShape)
+                                            .border(
+                                                1.dp,
+                                                MaterialTheme.colors.primaryVariant,
+                                                CircleShape
+                                            ),
+                                        contentScale = ContentScale.FillBounds
                                     )
 
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
 
-                                    Text(
-                                        text = "%s | %s".format(
-                                            it.createdAt.timeStampToHumanReadable(),
-                                            it.mediaType.name.lowercase()
-                                        ),
-                                        style = MaterialTheme.typography.caption,
-                                        color = MaterialTheme.colors.secondary
-                                    )
+                                    Column {
+                                        Text(
+                                            text = it.username,
+                                            style = MaterialTheme.typography.h6,
+                                            color = MaterialTheme.colors.primary
+                                        )
+
+                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                        Text(
+                                            text = it.fullName,
+                                            style = MaterialTheme.typography.caption,
+                                            color = MaterialTheme.colors.primary
+                                        )
+
+                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                painter = painterResource(
+                                                    id = R.drawable.ic_calendar_arrow_down
+                                                ), contentDescription = "",
+                                                Modifier.width(12.dp),
+                                                tint = MaterialTheme.colors.secondary
+                                            )
+
+                                            Spacer(modifier = Modifier.width(6.dp))
+
+                                            Text(
+                                                text = it.createdAt.timeStampToHumanReadable(),
+                                                style = MaterialTheme.typography.caption,
+                                                color = MaterialTheme.colors.secondary
+                                            )
+                                        }
+
+                                    }
                                 }
                             }
 
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = kotlin.run {
-                                        when (it.status.value) {
-                                            DownloadStatus.CREATED -> "Created"
-                                            DownloadStatus.PAUSED -> "Paused"
-                                            DownloadStatus.DOWNLOADING -> it.downloadProgress.value.toPercentString()
-                                            DownloadStatus.COMPLETED -> android.text.format.Formatter.formatFileSize(
-                                                context,
-                                                it.fileLength
-                                            )
-                                            DownloadStatus.FAILED -> "Failed"
-                                        }
-                                    },
-                                    style = MaterialTheme.typography.body2,
-                                    color = MaterialTheme.colors.primary
-                                )
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Icon(
+                                        painter = painterResource(id = kotlin.run {
+                                            if (it.mediaType == MediaType.IMAGE)
+                                                R.drawable.ic_image
+                                            else
+                                                R.drawable.ic_clapperboard
+                                        }), contentDescription = "",
+                                        Modifier.width(16.dp),
+                                        tint = MaterialTheme.colors.primary
+                                    )
+
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    Text(
+                                        text = kotlin.run {
+                                            when (it.status.value) {
+                                                DownloadStatus.CREATED -> stringResource(R.string.created)
+                                                DownloadStatus.PAUSED -> stringResource(R.string.paused)
+                                                DownloadStatus.DOWNLOADING -> it.downloadProgress.value.toPercentString()
+                                                DownloadStatus.COMPLETED -> Formatter.formatFileSize(
+                                                    context,
+                                                    it.fileLength
+                                                )
+                                                DownloadStatus.FAILED -> stringResource(R.string.failed)
+                                                DownloadStatus.CONNECTING -> stringResource(R.string.connecting)
+                                            }
+                                        },
+                                        style = MaterialTheme.typography.body2,
+                                        color = MaterialTheme.colors.primary
+                                    )
+                                }
+
 
                                 Spacer(modifier = Modifier.width(12.dp))
 
@@ -386,6 +535,7 @@ fun DownloadScreen(
                                             DownloadStatus.DOWNLOADING -> painterResource(id = R.drawable.ic_circle_pause)
                                             DownloadStatus.COMPLETED -> painterResource(id = R.drawable.ic_circle_check)
                                             DownloadStatus.FAILED -> painterResource(id = R.drawable.ic_circle_arrow_down)
+                                            DownloadStatus.CONNECTING -> painterResource(id = R.drawable.ic_circle_pause)
                                         }
                                     },
                                     contentDescription = "",
@@ -397,8 +547,6 @@ fun DownloadScreen(
 
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(8.dp))
 
                         Divider(color = MaterialTheme.colors.primaryVariant, thickness = 1.dp)
                     }

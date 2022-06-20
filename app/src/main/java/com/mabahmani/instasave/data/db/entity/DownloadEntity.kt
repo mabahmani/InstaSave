@@ -19,6 +19,8 @@ data class DownloadEntity(
     var contentLength: Long,
     var createdAt: Long,
     var previewImageUrl: String,
-    val downloadStatus: String,
-    val mediaType: String,
+    var downloadStatus: String,
+    var mediaType: String,
+    var fullName: String,
+    var profilePictureUrl: String,
 )

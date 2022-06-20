@@ -34,4 +34,7 @@ interface DownloadDao {
 
     @Query("UPDATE downloadentity SET downloadStatus=:downloadStatus, filePath=:filePath, fileName=:fileName, contentLength=:fileLength WHERE fileId = :fileId")
     suspend fun updateDownloadInfo(fileId:String, downloadStatus: String, filePath: String, fileName: String, fileLength: Long)
+
+    @Query("DELETE FROM downloadentity WHERE fileId = :fileId")
+    suspend fun deleteDownload(fileId:String)
 }

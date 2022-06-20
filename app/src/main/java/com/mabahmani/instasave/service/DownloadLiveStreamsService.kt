@@ -117,7 +117,6 @@ class DownloadLiveStreamsService : Service() {
                 download(
                     URL(model.playbackUrl),
                     FileHelper.getDownloadLiveStreamsMPDManifestFile(
-                        this,
                         model.username,
                         model.id.toString()
                     ).outputStream()
@@ -130,7 +129,6 @@ class DownloadLiveStreamsService : Service() {
 
                     val parsedData = parseMPD(
                         FileHelper.getDownloadLiveStreamsMPDManifestFile(
-                            this,
                             model.username,
                             model.id.toString()
                         ).inputStream()
@@ -249,7 +247,7 @@ class DownloadLiveStreamsService : Service() {
     private fun downloadAudioSegments(model: LiveStream) {
 
         val file =
-            FileHelper.getDownloadLiveStreamsAudioFile(this, model.username, model.id.toString())
+            FileHelper.getDownloadLiveStreamsAudioFile(model.username, model.id.toString())
 
         val executor = Executors.newSingleThreadExecutor()
 
@@ -282,7 +280,7 @@ class DownloadLiveStreamsService : Service() {
     private fun downloadVideoSegments(model: LiveStream) {
 
         val file =
-            FileHelper.getDownloadLiveStreamsVideoFile(this, model.username, model.id.toString())
+            FileHelper.getDownloadLiveStreamsVideoFile(model.username, model.id.toString())
 
         val executor = Executors.newSingleThreadExecutor()
 
@@ -316,11 +314,11 @@ class DownloadLiveStreamsService : Service() {
 
     private fun mergeVideoAndAudio(model: LiveStream) {
         val videoFile =
-            FileHelper.getDownloadLiveStreamsVideoFile(this, model.username, model.id.toString())
+            FileHelper.getDownloadLiveStreamsVideoFile(model.username, model.id.toString())
         val audioFile =
-            FileHelper.getDownloadLiveStreamsAudioFile(this, model.username, model.id.toString())
+            FileHelper.getDownloadLiveStreamsAudioFile(model.username, model.id.toString())
         val outputFile =
-            FileHelper.getDownloadLiveStreamsOutputFile(this, model.username, model.id.toString())
+            FileHelper.getDownloadLiveStreamsOutputFile(model.username, model.id.toString())
 
         FFmpegKit.executeAsync(
             "-i ${audioFile.path} -i ${videoFile.path} -y -c copy ${outputFile.path}",

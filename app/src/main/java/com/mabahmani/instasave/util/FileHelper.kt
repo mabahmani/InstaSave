@@ -1,17 +1,17 @@
 package com.mabahmani.instasave.util
 
-import android.content.Context
 import android.os.Environment
+import com.mabahmani.instasave.InstaSaveApplication
 import com.mabahmani.instasave.R
 import com.mabahmani.instasave.domain.model.enums.MediaType
 import java.io.File
 
 object FileHelper {
-    private fun getDownloadLiveStreamsDirectory(context: Context): File {
+    private fun getDownloadLiveStreamsDirectory(): File {
 
         val file = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            context.getString(R.string.app_name) + File.separator + context.getString(R.string.live_stream_path)
+            InstaSaveApplication.appContext.getString(R.string.app_name) + File.separator + InstaSaveApplication.appContext.getString(R.string.live_stream_path)
         )
 
         if (file.exists())
@@ -22,11 +22,11 @@ object FileHelper {
         return file
     }
 
-    private fun getDownloadDirectory(context: Context): File {
+    private fun getDownloadDirectory(): File {
 
         val file = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            context.getString(R.string.app_name)
+            InstaSaveApplication.appContext.getString(R.string.app_name) + File.separator + InstaSaveApplication.appContext.getString(R.string.media_path)
         )
 
 
@@ -39,12 +39,11 @@ object FileHelper {
     }
 
     private fun getDownloadLiveStreamsUserDirectory(
-        context: Context,
         username: String,
         liveId: String
     ): File {
         val file = File(
-            getDownloadLiveStreamsDirectory(context),
+            getDownloadLiveStreamsDirectory(),
             username + "_" + liveId
         )
 
@@ -57,11 +56,10 @@ object FileHelper {
     }
 
     private fun getDownloadUserDirectory(
-        context: Context,
         username: String
     ): File {
         val file = File(
-            getDownloadDirectory(context),
+            getDownloadDirectory(),
             username
         )
 
@@ -74,24 +72,23 @@ object FileHelper {
     }
 
     fun getDownloadLiveStreamsMPDManifestFile(
-        context: Context,
         username: String,
         liveId: String
     ): File {
-        return File(getDownloadLiveStreamsUserDirectory(context, username, liveId), "manifest.mpd")
+        return File(getDownloadLiveStreamsUserDirectory( username, liveId), "manifest.mpd")
     }
 
-    fun getDownloadLiveStreamsVideoFile(context: Context, username: String, liveId: String): File {
-        return File(getDownloadLiveStreamsUserDirectory(context, username, liveId), "video.m4v")
+    fun getDownloadLiveStreamsVideoFile(username: String, liveId: String): File {
+        return File(getDownloadLiveStreamsUserDirectory(username, liveId), "video.m4v")
     }
 
-    fun getDownloadLiveStreamsAudioFile(context: Context, username: String, liveId: String): File {
-        return File(getDownloadLiveStreamsUserDirectory(context, username, liveId), "audio.m4a")
+    fun getDownloadLiveStreamsAudioFile(username: String, liveId: String): File {
+        return File(getDownloadLiveStreamsUserDirectory(username, liveId), "audio.m4a")
     }
 
-    fun getDownloadLiveStreamsOutputFile(context: Context, username: String, liveId: String): File {
+    fun getDownloadLiveStreamsOutputFile(username: String, liveId: String): File {
         val file = File(
-            getDownloadLiveStreamsUserDirectory(context, username, liveId),
+            getDownloadLiveStreamsUserDirectory(username, liveId),
             "%s_%s_%s.mp4".format(username, liveId, System.currentTimeMillis())
         )
 
@@ -100,7 +97,6 @@ object FileHelper {
     }
 
     fun getDownloadOutputFile(
-        context: Context,
         username: String,
         fileId: String,
         mediaType: MediaType
@@ -108,7 +104,7 @@ object FileHelper {
         when (mediaType) {
             MediaType.IMAGE -> {
                 val file = File(
-                    getDownloadUserDirectory(context, username),
+                    getDownloadUserDirectory(username),
                     "%s_%s.jpg".format(username, fileId)
                 )
                 file.createNewFile()
@@ -117,7 +113,7 @@ object FileHelper {
 
             MediaType.VIDEO -> {
                 val file = File(
-                    getDownloadUserDirectory(context, username),
+                    getDownloadUserDirectory(username),
                     "%s_%s.mp4".format(username, fileId)
                 )
                 file.createNewFile()
@@ -127,7 +123,6 @@ object FileHelper {
     }
 
     fun isDownloadFileExists(
-        context: Context,
         username: String,
         fileId: String,
         mediaType: MediaType
@@ -135,7 +130,7 @@ object FileHelper {
         when (mediaType) {
             MediaType.IMAGE -> {
                 val file = File(
-                    getDownloadUserDirectory(context, username),
+                    getDownloadUserDirectory(username),
                     "%s_%s.jpg".format(username, fileId)
                 )
                 return file.exists()
@@ -143,11 +138,21 @@ object FileHelper {
 
             MediaType.VIDEO -> {
                 val file = File(
-                    getDownloadUserDirectory(context, username),
+                    getDownloadUserDirectory(username),
                     "%s_%s.mp4".format(username, fileId)
                 )
                 return file.exists()
             }
+        }
+    }
+
+    fun deleteMediaFile(
+        filePath: String,
+    ){
+        try {
+            File(filePath).delete()
+        }catch (ex: Exception){
+            ex.printStackTrace()
         }
     }
 }

@@ -21,4 +21,6 @@ interface LocalDataSource {
     suspend fun updateDownloadStatus(fileId: String, downloadStatus: DownloadStatus)
 
     suspend fun updateDownloadInfo(fileId:String, downloadStatus: DownloadStatus, filePath: String, fileName: String, fileLength: Long)
+
+    suspend fun deleteDownload(fileId:String)
 }
