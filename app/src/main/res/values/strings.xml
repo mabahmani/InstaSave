@@ -15,7 +15,7 @@
     <string name="login_to_instagram_account">In case of download medias you must log in to your instagram account</string>
     <string name="login">Login</string>
     <string name="live_streams">Live Streams</string>
-    <string name="no_live_streams">There is no live streams</string>
+    <string name="no_live_streams">There is no ongoing live streams at this moment</string>
     <string name="no_downloads">There is no downloads</string>
     <string name="downloading">Downloading…</string>
     <string name="merging">Merging…</string>
@@ -36,4 +36,6 @@
     <string name="paused">Paused</string>
     <string name="failed">Failed</string>
     <string name="connecting">Connecting</string>
+    <string name="network_error">Check your internet connection and try again.</string>
+    <string name="something_went_wrong">Something went wrong.</string>
 </resources>

@@ -3,10 +3,12 @@ package com.mabahmani.instasave.ui.main.download
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mabahmani.instasave.data.api.response.Failure
 import com.mabahmani.instasave.data.db.entity.DownloadEntity
 import com.mabahmani.instasave.domain.interactor.*
 import com.mabahmani.instasave.domain.model.Download
 import com.mabahmani.instasave.domain.model.enums.DownloadStatus
+import com.mabahmani.instasave.ui.main.livestream.LiveStreamUiState
 import com.mabahmani.instasave.util.DownloadManager
 import com.mabahmani.instasave.util.FileHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,7 +40,7 @@ class DownloadViewModel @Inject constructor(
                     _downloadUiState.emit(DownloadUiState.EmptyList)
                 } else {
                     _downloadUiState.emit(DownloadUiState.ShowDownloadsList(
-                        it.map {downloadEntity ->
+                        it.map { downloadEntity ->
                             Download(
                                 downloadEntity.id,
                                 downloadEntity.fileId,
@@ -79,7 +81,7 @@ class DownloadViewModel @Inject constructor(
 
         viewModelScope.launch {
 
-            if (url.contains("instagram.com", true)){
+            if (url.contains("instagram.com", true)) {
                 _downloadUiState.emit(
                     DownloadUiState.ShowCheckUrlDialog
                 )
@@ -92,9 +94,15 @@ class DownloadViewModel @Inject constructor(
                     )
                     Timber.d("fetchLinkData isSuccess %s", result.getOrNull())
                 } else {
-                    _downloadUiState.emit(
-                        DownloadUiState.FetchLinkDataFailed
-                    )
+
+                    when (result.exceptionOrNull()) {
+                        is Failure.NetworkConnectionError -> _downloadUiState.emit(
+                            DownloadUiState.NetworkError
+                        )
+                        else -> _downloadUiState.emit(
+                            DownloadUiState.FetchLinkDataFailed
+                        )
+                    }
 
                     Timber.d("fetchLinkData isFailure %s", result.exceptionOrNull())
                 }
@@ -108,7 +116,7 @@ class DownloadViewModel @Inject constructor(
     fun addToDownloads(downloads: List<Download>) {
         viewModelScope.launch {
 
-            if (downloads.isNotEmpty()){
+            if (downloads.isNotEmpty()) {
                 if (downloadIsExistsUseCase(downloads[0].code)) {
                     _downloadUiState.emit(DownloadUiState.AlreadyDownloaded)
                 } else {
@@ -162,7 +170,7 @@ class DownloadViewModel @Inject constructor(
         }
     }
 
-    fun setIdleState(){
+    fun setIdleState() {
         viewModelScope.launch {
             _downloadUiState.emit(
                 DownloadUiState.Idle
@@ -170,7 +178,7 @@ class DownloadViewModel @Inject constructor(
         }
     }
 
-    fun onShowDeleteDialog(download: Download){
+    fun onShowDeleteDialog(download: Download) {
         viewModelScope.launch {
             _downloadUiState.emit(
                 DownloadUiState.ShowDeleteDialog(download)
@@ -178,9 +186,9 @@ class DownloadViewModel @Inject constructor(
         }
     }
 
-    fun deleteDownload(download: Download?, withFile: Boolean = false){
+    fun deleteDownload(download: Download?, withFile: Boolean = false) {
         viewModelScope.launch {
-            if (download != null){
+            if (download != null) {
                 deleteDownloadUseCase(download.fileId)
 
                 if (withFile)

@@ -253,7 +253,7 @@ class DownloadLiveStreamsService : Service() {
 
         executor.execute {
 
-            while (model.downloadState.value == LiveStream.DownloadState.DOWNLOADING) {
+            while (model.downloadState.value == LiveStream.DownloadState.DOWNLOADING || model.audioSegmentsUrl.isNotEmpty()) {
 
                 if (model.audioSegmentsUrl.isNotEmpty()) {
 
@@ -286,7 +286,7 @@ class DownloadLiveStreamsService : Service() {
 
         executor.execute {
 
-            while (model.downloadState.value == LiveStream.DownloadState.DOWNLOADING) {
+            while (model.downloadState.value == LiveStream.DownloadState.DOWNLOADING || model.videoSegmentsUrl.isNotEmpty()) {
 
                 if (model.videoSegmentsUrl.isNotEmpty()) {
 
@@ -385,6 +385,7 @@ class DownloadLiveStreamsService : Service() {
         currentDownloadList.forEach {
             it.downloadState.value = LiveStream.DownloadState.COMPLETED
         }
+
         stopForeground(true)
         stopSelf()
     }

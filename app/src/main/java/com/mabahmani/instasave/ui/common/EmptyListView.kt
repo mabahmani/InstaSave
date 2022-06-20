@@ -29,7 +29,7 @@ fun EmptyView(title: String) {
         Text(
             text = title,
             style = MaterialTheme.typography.subtitle1,
-            color = MaterialTheme.colors.secondaryVariant
+            color = MaterialTheme.colors.secondary
         )
     }
 }

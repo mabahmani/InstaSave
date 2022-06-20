@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.mabahmani.instasave.R
 import com.mabahmani.instasave.domain.model.LiveStream
 import com.mabahmani.instasave.service.DownloadLiveStreamsService
@@ -48,9 +50,22 @@ fun LiveStreamScreen(
         viewModel.launch()
     }
 
+    val list = remember {
+        mutableStateOf<List<LiveStream>>(listOf())
+    }
+
     val state = viewModel.liveStreamUiState.collectAsState()
 
+    var isRefreshing = false
+
     Timber.d("LiveStreamScreen %s", state.value)
+
+    when(state.value){
+        is LiveStreamUiState.ShowLiveStreams ->{
+            isRefreshing = false
+            list.value = (state.value as LiveStreamUiState.ShowLiveStreams).liveStreams
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -63,166 +78,201 @@ fun LiveStreamScreen(
             color = MaterialTheme.colors.primary,
             modifier = Modifier.padding(16.dp)
         )
+
         Divider(color = MaterialTheme.colors.primaryVariant, thickness = 1.dp)
 
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
 
-            this@Column.AnimatedVisibility(visible = state.value is LiveStreamUiState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .width(24.dp)
-                        .height(24.dp)
-                        .align(Alignment.Center),
-                    color = MaterialTheme.colors.primary,
-                    strokeWidth = 2.dp
-                )
-            }
+        SwipeRefresh(
+            state = rememberSwipeRefreshState(isRefreshing),
+            onRefresh = { viewModel.launch() }
+        ){
 
-            this@Column.AnimatedVisibility(visible = state.value is LiveStreamUiState.ShowLiveStreams) {
-
-                LazyVerticalGrid(
-                    cells = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(2.dp),
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    items(
-                        items = (state.value as LiveStreamUiState.ShowLiveStreams).liveStreams
+            Column {
+                AnimatedVisibility(visible = state.value is LiveStreamUiState.LoadingWithData && state.value !is LiveStreamUiState.Loading) {
+                    Row(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                        horizontalArrangement = Arrangement.Center
                     ) {
 
-                        Box(modifier = Modifier
-                            .padding(1.dp)
-                            .clickable {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .width(24.dp)
+                                .height(24.dp),
+                            color = MaterialTheme.colors.primary,
+                            strokeWidth = 1.dp
+                        )
+                    }
+
+                }
+
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+
+                    this@Column.AnimatedVisibility(visible = state.value is LiveStreamUiState.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .width(24.dp)
+                                .height(24.dp)
+                                .align(Alignment.Center),
+                            color = MaterialTheme.colors.primary,
+                            strokeWidth = 2.dp
+                        )
+                    }
+
+                    this@Column.AnimatedVisibility(visible = state.value is LiveStreamUiState.ShowLiveStreams || state.value is LiveStreamUiState.LoadingWithData) {
+
+                        LazyVerticalGrid(
+                            cells = GridCells.Fixed(3),
+                            contentPadding = PaddingValues(2.dp),
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            items(
+                                items = list.value
+                            ) {
+
+                                Box(modifier = Modifier
+                                    .padding(1.dp)
+                                    .clickable {
 
 
-                                if (it.downloadState.value == LiveStream.DownloadState.DOWNLOADING) {
-                                    mContext.startService(
-                                        Intent(
-                                            mContext,
-                                            DownloadLiveStreamsService::class.java
-                                        ).apply {
-                                            action = NotificationHelper.STOP_RECORDING_LIVE
-                                            putExtra(AppConstants.Args.ID, it.id)
-                                            putExtra(AppConstants.Args.USERNAME, it.username)
-                                            putExtra(AppConstants.Args.URL, it.playbackUrl)
-                                        }
-                                    )
-
-                                    it.downloadState.value = LiveStream.DownloadState.COMPLETED
-
-                                } else {
-                                    mContext.startService(
-                                        Intent(
-                                            mContext,
-                                            DownloadLiveStreamsService::class.java
-                                        ).apply {
-                                            putExtra(AppConstants.Args.ID, it.id)
-                                            putExtra(AppConstants.Args.USERNAME, it.username)
-                                            putExtra(AppConstants.Args.URL, it.playbackUrl)
-                                        }
-                                    )
-
-                                    it.downloadState.value = LiveStream.DownloadState.DOWNLOADING
-
-                                }
-
-                            }) {
-                            Box(modifier = Modifier.background(color = MaterialTheme.colors.secondaryVariant)) {
-                                Image(
-                                    painter = rememberAsyncImagePainter(model = it.preview),
-                                    contentDescription = "",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(0.6f),
-                                    contentScale = ContentScale.FillBounds
-                                )
-
-                                this@Column.AnimatedVisibility(visible = it.downloadState.value != LiveStream.DownloadState.IDLE) {
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .padding(4.dp, 4.dp)
-                                            .background(
-                                                MaterialTheme.colors.primary,
-                                                shape = RoundedCornerShape(4.dp)
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = kotlin.run {
-                                                when (it.downloadState.value) {
-                                                    LiveStream.DownloadState.DOWNLOADING -> stringResource(R.string.downloading)
-                                                    LiveStream.DownloadState.MERGING -> stringResource(R.string.merging)
-                                                    LiveStream.DownloadState.COMPLETED -> stringResource(R.string.completed)
-                                                    else -> {
-                                                        stringResource(R.string.completed)
-                                                    }
+                                        if (it.downloadState.value == LiveStream.DownloadState.DOWNLOADING) {
+                                            mContext.startService(
+                                                Intent(
+                                                    mContext,
+                                                    DownloadLiveStreamsService::class.java
+                                                ).apply {
+                                                    action = NotificationHelper.STOP_RECORDING_LIVE
+                                                    putExtra(AppConstants.Args.ID, it.id)
+                                                    putExtra(AppConstants.Args.USERNAME, it.username)
+                                                    putExtra(AppConstants.Args.URL, it.playbackUrl)
                                                 }
-                                            },
-                                            textAlign = TextAlign.Center,
-                                            color = MaterialTheme.colors.primaryVariant,
-                                            modifier = Modifier.padding(4.dp, 4.dp),
-                                            style = MaterialTheme.typography.body1,
-                                            fontSize = 8.sp
+                                            )
+
+                                            it.downloadState.value = LiveStream.DownloadState.COMPLETED
+
+                                        } else {
+                                            mContext.startService(
+                                                Intent(
+                                                    mContext,
+                                                    DownloadLiveStreamsService::class.java
+                                                ).apply {
+                                                    putExtra(AppConstants.Args.ID, it.id)
+                                                    putExtra(AppConstants.Args.USERNAME, it.username)
+                                                    putExtra(AppConstants.Args.URL, it.playbackUrl)
+                                                }
+                                            )
+
+                                            it.downloadState.value =
+                                                LiveStream.DownloadState.DOWNLOADING
+
+                                        }
+
+                                    }) {
+                                    Box(modifier = Modifier.background(color = MaterialTheme.colors.secondaryVariant)) {
+                                        Image(
+                                            painter = rememberAsyncImagePainter(model = it.preview),
+                                            contentDescription = "",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .aspectRatio(0.6f),
+                                            contentScale = ContentScale.FillBounds
                                         )
+
+                                        this@Column.AnimatedVisibility(visible = it.downloadState.value != LiveStream.DownloadState.IDLE) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .padding(4.dp, 4.dp)
+                                                    .background(
+                                                        MaterialTheme.colors.primary,
+                                                        shape = RoundedCornerShape(4.dp)
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = kotlin.run {
+                                                        when (it.downloadState.value) {
+                                                            LiveStream.DownloadState.DOWNLOADING -> stringResource(R.string.downloading)
+                                                            LiveStream.DownloadState.MERGING -> stringResource(R.string.merging)
+                                                            LiveStream.DownloadState.COMPLETED -> stringResource(R.string.completed)
+                                                            else -> {
+                                                                stringResource(R.string.completed)
+                                                            }
+                                                        }
+                                                    },
+                                                    textAlign = TextAlign.Center,
+                                                    color = MaterialTheme.colors.primaryVariant,
+                                                    modifier = Modifier.padding(4.dp, 4.dp),
+                                                    style = MaterialTheme.typography.body1,
+                                                    fontSize = 8.sp
+                                                )
+                                            }
+                                        }
+
+
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(8.dp)
+                                                .align(Alignment.BottomCenter),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                        ) {
+                                            Image(
+                                                painter = rememberAsyncImagePainter(model = it.avatar),
+                                                contentDescription = "",
+                                                modifier = Modifier
+                                                    .width(32.dp)
+                                                    .height(32.dp)
+                                                    .clip(CircleShape)
+                                                    .border(
+                                                        1.dp,
+                                                        MaterialTheme.colors.primaryVariant,
+                                                        CircleShape
+                                                    ),
+                                                contentScale = ContentScale.FillBounds
+                                            )
+
+                                            Text(
+                                                text = it.username,
+                                                style = MaterialTheme.typography.h6,
+                                                fontSize = 10.sp,
+                                                color = MaterialTheme.colors.primaryVariant,
+                                                modifier = Modifier.padding(0.dp, 2.dp),
+                                                maxLines = 1
+                                            )
+                                            Text(
+                                                text = it.elapsedTime,
+                                                style = MaterialTheme.typography.caption,
+                                                fontSize = 10.sp,
+                                                color = MaterialTheme.colors.primaryVariant,
+                                                maxLines = 1
+                                            )
+                                        }
+
                                     }
+
                                 }
-
-
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(8.dp)
-                                        .align(Alignment.BottomCenter),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                ) {
-                                    Image(
-                                        painter = rememberAsyncImagePainter(model = it.avatar),
-                                        contentDescription = "",
-                                        modifier = Modifier
-                                            .width(32.dp)
-                                            .height(32.dp)
-                                            .clip(CircleShape)
-                                            .border(
-                                                1.dp,
-                                                MaterialTheme.colors.primaryVariant,
-                                                CircleShape
-                                            ),
-                                        contentScale = ContentScale.FillBounds
-                                    )
-
-                                    Text(
-                                        text = it.username,
-                                        style = MaterialTheme.typography.h6,
-                                        fontSize = 10.sp,
-                                        color = MaterialTheme.colors.primaryVariant,
-                                        modifier = Modifier.padding(0.dp, 2.dp),
-                                        maxLines = 1
-                                    )
-                                    Text(
-                                        text = it.elapsedTime,
-                                        style = MaterialTheme.typography.caption,
-                                        fontSize = 10.sp,
-                                        color = MaterialTheme.colors.primaryVariant,
-                                        maxLines = 1
-                                    )
-                                }
-
                             }
-
                         }
                     }
+
+                    this@Column.AnimatedVisibility(visible = state.value is LiveStreamUiState.EmptyList || state.value is LiveStreamUiState.NetworkError || state.value is LiveStreamUiState.Error) {
+                        when(state.value){
+                            is LiveStreamUiState.NetworkError -> EmptyView(title = stringResource(id = R.string.network_error))
+                            is LiveStreamUiState.EmptyList -> EmptyView(title = stringResource(id = R.string.no_live_streams))
+                            else -> EmptyView(title = stringResource(id = R.string.something_went_wrong))
+                        }
+                    }
+
                 }
             }
 
-            this@Column.AnimatedVisibility(visible = state.value is LiveStreamUiState.EmptyList) {
-                EmptyView(title = stringResource(id = R.string.no_live_streams))
-            }
-
         }
+
 
 
     }

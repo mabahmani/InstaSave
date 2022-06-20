@@ -23,18 +23,28 @@ class LiveStreamViewModel @Inject constructor(
     val liveStreamUiState: StateFlow<LiveStreamUiState> = _liveStreamUiState
 
     fun launch() {
-
         viewModelScope.launch {
+
+            if (_liveStreamUiState.value is LiveStreamUiState.ShowLiveStreams
+            ) {
+                _liveStreamUiState.emit(
+                    LiveStreamUiState.LoadingWithData
+                )
+            } else {
+                _liveStreamUiState.emit(
+                    LiveStreamUiState.Loading
+                )
+            }
+
+
             val result = getCurrentLiveStreamsUseCase()
 
             if (result.isSuccess) {
                 val liveStreams = result.getOrNull()
 
-                if (liveStreams.isNullOrEmpty()){
+                if (liveStreams.isNullOrEmpty()) {
                     _liveStreamUiState.emit(LiveStreamUiState.EmptyList)
-                }
-
-                else{
+                } else {
                     Timber.d("liveStreams %s", liveStreams)
                     liveStreams.forEach {
                         if (DownloadLiveStreamsService.isDownloading(it.id))
@@ -47,7 +57,11 @@ class LiveStreamViewModel @Inject constructor(
                 when (result.exceptionOrNull()) {
                     is Failure.HttpErrorUnauthorized -> _liveStreamUiState.emit(LiveStreamUiState.Unauthorized)
                     is Failure.NetworkConnectionError -> _liveStreamUiState.emit(LiveStreamUiState.NetworkError)
-                    else -> _liveStreamUiState.emit(LiveStreamUiState.Error(result.exceptionOrNull()?.message ?: ""))
+                    else -> _liveStreamUiState.emit(
+                        LiveStreamUiState.Error(
+                            result.exceptionOrNull()?.message ?: ""
+                        )
+                    )
                 }
             }
         }

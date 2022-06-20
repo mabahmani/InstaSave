@@ -150,6 +150,13 @@ fun DownloadScreen(
             viewModel.setIdleState()
         }
 
+        is DownloadUiState.NetworkError -> {
+            context.toast(
+                stringResource(R.string.network_error)
+            )
+            viewModel.setIdleState()
+        }
+
         is DownloadUiState.Idle -> {
             openCheckUrlDialog.value = false
             inputValue.value = ""

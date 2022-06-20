@@ -8,6 +8,7 @@ sealed class DownloadUiState {
     object FetchLinkDataFailed : DownloadUiState()
     object AlreadyDownloaded : DownloadUiState()
     object ShowCheckUrlDialog : DownloadUiState()
+    object NetworkError : DownloadUiState()
     object Idle : DownloadUiState()
     class AddToDownload(val downloads: List<Download>) : DownloadUiState()
     class ShowDeleteDialog(val download: Download) : DownloadUiState()
