@@ -108,38 +108,39 @@ class DownloadViewModel @Inject constructor(
     fun addToDownloads(downloads: List<Download>) {
         viewModelScope.launch {
 
-            if (downloadIsExistsUseCase(downloads[0].code)) {
-                _downloadUiState.emit(DownloadUiState.AlreadyDownloaded)
-            } else {
-                addToDownloadUseCase(
-                    downloads.map {
-                        DownloadEntity(
-                            0,
-                            it.code,
-                            it.url,
-                            "",
-                            "",
-                            it.fileId,
-                            it.username,
-                            0,
-                            it.createdAt,
-                            it.previewImageUrl,
-                            it.status.value.name,
-                            it.mediaType.name,
-                            it.fullName,
-                            it.profilePictureUrl,
+            if (downloads.isNotEmpty()){
+                if (downloadIsExistsUseCase(downloads[0].code)) {
+                    _downloadUiState.emit(DownloadUiState.AlreadyDownloaded)
+                } else {
+                    addToDownloadUseCase(
+                        downloads.map {
+                            DownloadEntity(
+                                0,
+                                it.code,
+                                it.url,
+                                "",
+                                "",
+                                it.fileId,
+                                it.username,
+                                0,
+                                it.createdAt,
+                                it.previewImageUrl,
+                                it.status.value.name,
+                                it.mediaType.name,
+                                it.fullName,
+                                it.profilePictureUrl,
+                            )
+                        }
+                    )
+
+                    downloads.forEach {
+                        Timber.d("addToDownloads %s", it)
+                        DownloadManager.startDownload(
+                            it
                         )
                     }
-                )
-
-                downloads.forEach {
-                    Timber.d("addToDownloads %s", it)
-                    DownloadManager.startDownload(
-                        it
-                    )
                 }
             }
-
         }
     }
 

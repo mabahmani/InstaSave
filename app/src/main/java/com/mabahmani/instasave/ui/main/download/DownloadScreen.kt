@@ -464,7 +464,7 @@ fun DownloadScreen(
                                             color = MaterialTheme.colors.primary
                                         )
 
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(6.dp))
 
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Icon(

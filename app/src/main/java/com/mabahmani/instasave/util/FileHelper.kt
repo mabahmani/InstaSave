@@ -1,5 +1,6 @@
 package com.mabahmani.instasave.util
 
+import android.media.MediaScannerConnection
 import android.os.Environment
 import com.mabahmani.instasave.InstaSaveApplication
 import com.mabahmani.instasave.R
@@ -26,7 +27,7 @@ object FileHelper {
 
         val file = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            InstaSaveApplication.appContext.getString(R.string.app_name) + File.separator + InstaSaveApplication.appContext.getString(R.string.media_path)
+            InstaSaveApplication.appContext.getString(R.string.app_name)
         )
 
 
@@ -45,22 +46,6 @@ object FileHelper {
         val file = File(
             getDownloadLiveStreamsDirectory(),
             username + "_" + liveId
-        )
-
-        if (file.exists())
-            return file
-        else
-            file.mkdirs()
-
-        return file
-    }
-
-    private fun getDownloadUserDirectory(
-        username: String
-    ): File {
-        val file = File(
-            getDownloadDirectory(),
-            username
         )
 
         if (file.exists())
@@ -92,6 +77,8 @@ object FileHelper {
             "%s_%s_%s.mp4".format(username, liveId, System.currentTimeMillis())
         )
 
+        MediaScannerConnection.scanFile(InstaSaveApplication.appContext, arrayOf(file.path), arrayOf("video/*"), null)
+
         file.createNewFile()
         return file
     }
@@ -104,22 +91,30 @@ object FileHelper {
         when (mediaType) {
             MediaType.IMAGE -> {
                 val file = File(
-                    getDownloadUserDirectory(username),
+                    getDownloadDirectory(),
                     "%s_%s.jpg".format(username, fileId)
                 )
                 file.createNewFile()
+
+                MediaScannerConnection.scanFile(InstaSaveApplication.appContext, arrayOf(file.path), arrayOf("image/*"), null)
+
                 return file
             }
 
             MediaType.VIDEO -> {
                 val file = File(
-                    getDownloadUserDirectory(username),
+                    getDownloadDirectory(),
                     "%s_%s.mp4".format(username, fileId)
                 )
                 file.createNewFile()
+
+                MediaScannerConnection.scanFile(InstaSaveApplication.appContext, arrayOf(file.path), arrayOf("video/*"), null)
+
                 return file
             }
         }
+
+
     }
 
     fun isDownloadFileExists(
@@ -130,7 +125,7 @@ object FileHelper {
         when (mediaType) {
             MediaType.IMAGE -> {
                 val file = File(
-                    getDownloadUserDirectory(username),
+                    getDownloadDirectory(),
                     "%s_%s.jpg".format(username, fileId)
                 )
                 return file.exists()
@@ -138,7 +133,7 @@ object FileHelper {
 
             MediaType.VIDEO -> {
                 val file = File(
-                    getDownloadUserDirectory(username),
+                    getDownloadDirectory(),
                     "%s_%s.mp4".format(username, fileId)
                 )
                 return file.exists()
@@ -151,6 +146,19 @@ object FileHelper {
     ){
         try {
             File(filePath).delete()
+        }catch (ex: Exception){
+            ex.printStackTrace()
+        }
+    }
+
+    fun scanAppMedias(){
+        try {
+            val file = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                InstaSaveApplication.appContext.getString(R.string.app_name)
+            )
+
+            MediaScannerConnection.scanFile(InstaSaveApplication.appContext, arrayOf(file.path), arrayOf("video/*","image/*"), null)
         }catch (ex: Exception){
             ex.printStackTrace()
         }

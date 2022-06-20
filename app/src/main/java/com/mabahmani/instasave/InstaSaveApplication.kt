@@ -2,6 +2,7 @@ package com.mabahmani.instasave
 
 import android.app.Application
 import android.content.Context
+import com.mabahmani.instasave.util.FileHelper
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import timber.log.Timber.Forest.plant
@@ -22,5 +23,7 @@ class InstaSaveApplication: Application(){
         if (BuildConfig.DEBUG){
             plant(Timber.DebugTree())
         }
+
+        FileHelper.scanAppMedias()
     }
 }
