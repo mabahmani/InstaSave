@@ -27,8 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
+import com.mabahmani.instasave.BuildConfig
 import com.mabahmani.instasave.R
 import com.mabahmani.instasave.domain.model.Download
 import com.mabahmani.instasave.domain.model.enums.DownloadStatus
@@ -40,6 +42,7 @@ import com.mabahmani.instasave.util.timeStampToHumanReadable
 import com.mabahmani.instasave.util.toPercentString
 import com.mabahmani.instasave.util.toast
 import timber.log.Timber
+import java.io.File
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -373,18 +376,27 @@ fun DownloadScreen(
                                     } else {
                                         val intent = Intent()
                                         intent.action = Intent.ACTION_VIEW
+                                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
                                         when (it.mediaType) {
                                             MediaType.IMAGE -> {
                                                 intent.setDataAndType(
-                                                    Uri.parse(it.filePath),
-                                                    "image/*"
+                                                    FileProvider.getUriForFile(
+                                                        context,
+                                                        BuildConfig.APPLICATION_ID + ".provider",
+                                                        File(it.filePath)
+                                                    ),
+                                                   "image/*"
                                                 )
                                             }
 
                                             MediaType.VIDEO -> {
                                                 intent.setDataAndType(
-                                                    Uri.parse(it.filePath),
+                                                    FileProvider.getUriForFile(
+                                                        context,
+                                                        BuildConfig.APPLICATION_ID + ".provider",
+                                                        File(it.filePath)
+                                                    ),
                                                     "video/*"
                                                 )
                                             }
