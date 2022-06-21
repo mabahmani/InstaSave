@@ -9,10 +9,8 @@ import com.arthenica.ffmpegkit.FFmpegKit
 import com.mabahmani.instasave.R
 import com.mabahmani.instasave.domain.model.LiveStream
 import com.mabahmani.instasave.domain.model.MPD
-import com.mabahmani.instasave.util.AppConstants
-import com.mabahmani.instasave.util.FileHelper
+import com.mabahmani.instasave.util.*
 import com.mabahmani.instasave.util.LiveStreamMPDXmlParser.parseMPD
-import com.mabahmani.instasave.util.NotificationHelper
 import com.mabahmani.instasave.util.NotificationHelper.LIVE_STREAM_NOTIFICATION_ID
 import com.mabahmani.instasave.util.NotificationHelper.STOP_FOREGROUND_SERVICE_ACTION
 import com.mabahmani.instasave.util.NotificationHelper.STOP_RECORDING_LIVE
@@ -31,6 +29,8 @@ class DownloadLiveStreamsService : Service() {
         fun isDownloading(liveId: Long): Boolean {
             return currentDownloadList.find { it.id == liveId } != null
         }
+
+        var callBack: ((LiveStream) -> Unit)? = null
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -62,6 +62,14 @@ class DownloadLiveStreamsService : Service() {
                     currentDownloadList.add(liveStreamModel)
 
                     createDownloadThread(liveStreamModel)
+
+                    if (callBack != null){
+                        try {
+                            callBack!!.invoke(liveStreamModel)
+                        }catch (ex: Exception){
+                            ex.printStackTrace()
+                        }
+                    }
                 }
 
 
@@ -73,9 +81,26 @@ class DownloadLiveStreamsService : Service() {
 
     private fun cancelDownload(liveId: Long) {
         Timber.d("cancelDownload %s", liveId)
-        currentDownloadList.find { it.id == liveId }?.apply {
-            downloadState.value = LiveStream.DownloadState.COMPLETED
+        val foundedItem = currentDownloadList.find { it.id == liveId }?.apply {
+            downloadState.value = LiveStream.DownloadState.MERGING
         }
+
+        if (callBack != null){
+            try {
+                callBack!!.invoke(foundedItem!!)
+            }catch (ex: Exception){
+                ex.printStackTrace()
+            }
+        }
+
+        NotificationHelper.notifyDownloadLiveStreamFinishing(
+            this,
+            getString(R.string.live_stream_download_finishing_format).format(
+                foundedItem?.videoSegmentsUrl?.size.toString(),
+                foundedItem?.username.orEmpty()
+            ),
+            foundedItem?.id.orZero()
+        )
     }
 
     private fun createDownloadThread(model: LiveStream) {
@@ -94,7 +119,7 @@ class DownloadLiveStreamsService : Service() {
                         downloadMPD(model)
                         mainHandler.postDelayed(this, 2000)
                     } else {
-                        model.downloadState.value = LiveStream.DownloadState.COMPLETED
+                        model.downloadState.value = LiveStream.DownloadState.MERGING
                     }
                 }
             })
@@ -288,6 +313,25 @@ class DownloadLiveStreamsService : Service() {
 
             while (model.downloadState.value == LiveStream.DownloadState.DOWNLOADING || model.videoSegmentsUrl.isNotEmpty()) {
 
+                if (model.downloadState.value == LiveStream.DownloadState.MERGING){
+
+                    if (callBack != null){
+                        try {
+                            callBack!!.invoke(model)
+                        }catch (ex: Exception){
+                            ex.printStackTrace()
+                        }
+                    }
+
+                    NotificationHelper.notifyDownloadLiveStreamFinishing(
+                        this,
+                        getString(R.string.live_stream_download_finishing_format).format(
+                            model.videoSegmentsUrl.size.toString(),
+                            model.username
+                        ),
+                        model.id
+                    )
+                }
                 if (model.videoSegmentsUrl.isNotEmpty()) {
 
                     val it = model.videoSegmentsUrl[0]
@@ -333,9 +377,22 @@ class DownloadLiveStreamsService : Service() {
     }
 
     private fun completeDownload(model: LiveStream) {
+
+        model.downloadState.value = LiveStream.DownloadState.COMPLETED
+
+        if (callBack != null){
+            try {
+                callBack!!.invoke(model)
+            }catch (ex: Exception){
+                ex.printStackTrace()
+            }
+        }
+
+
         NotificationHelper.notifyDownloadLiveStreamCompleted(
             this,
-            getString(R.string.live_stream_download_completed_format).format(model.username)
+            getString(R.string.live_stream_download_completed_format).format(model.username),
+            model.id
         )
         currentDownloadList.remove(model)
 
@@ -383,7 +440,24 @@ class DownloadLiveStreamsService : Service() {
 
     private fun cancelAllDownloads() {
         currentDownloadList.forEach {
-            it.downloadState.value = LiveStream.DownloadState.COMPLETED
+            it.downloadState.value = LiveStream.DownloadState.MERGING
+
+            if (callBack != null){
+                try {
+                    callBack!!.invoke(it)
+                }catch (ex: Exception){
+                    ex.printStackTrace()
+                }
+            }
+
+            NotificationHelper.notifyDownloadLiveStreamFinishing(
+                this,
+                getString(R.string.live_stream_download_finishing_format).format(
+                    it.videoSegmentsUrl.size.toString(),
+                    it.username
+                ),
+                it.id
+            )
         }
 
         stopForeground(true)

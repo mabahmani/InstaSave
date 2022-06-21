@@ -67,6 +67,21 @@ fun LiveStreamScreen(
         }
     }
 
+    DownloadLiveStreamsService.callBack = { item->
+        Timber.d("DownloadLiveStreamsServicecallBack %s", item)
+
+        try {
+            list.value.find {
+                it.id == item.id
+            }?.apply {
+                downloadState.value = item.downloadState.value
+                remindSegments.value = item.videoSegmentsUrl.size
+            }
+        }catch (ex: Exception){
+            ex.printStackTrace()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -197,7 +212,7 @@ fun LiveStreamScreen(
                                                     text = kotlin.run {
                                                         when (it.downloadState.value) {
                                                             LiveStream.DownloadState.DOWNLOADING -> stringResource(R.string.downloading)
-                                                            LiveStream.DownloadState.MERGING -> stringResource(R.string.merging)
+                                                            LiveStream.DownloadState.MERGING -> stringResource(R.string.merging_format).format(it.remindSegments.value)
                                                             LiveStream.DownloadState.COMPLETED -> stringResource(R.string.completed)
                                                             else -> {
                                                                 stringResource(R.string.completed)

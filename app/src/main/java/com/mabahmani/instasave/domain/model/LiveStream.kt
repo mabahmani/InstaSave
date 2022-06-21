@@ -18,6 +18,7 @@ data class LiveStream(
     var refreshDuplicateCount:Int = 0,
     var videoInitDownloaded:Boolean = false,
     var audioInitDownloaded:Boolean = false,
+    var remindSegments: MutableState<Int> = mutableStateOf(0)
 ){
     enum class DownloadState{
         IDLE,

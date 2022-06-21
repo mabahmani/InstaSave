@@ -28,7 +28,7 @@ object NotificationHelper {
                 context.getString(R.string.live_stream_download_notification_channel_id),
                 context.getString(R.string.live_stream_download_notification_channel_name),
                 context.getString(R.string.live_stream_download_notification_channel_description),
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_LOW
             )
         }
 
@@ -39,7 +39,7 @@ object NotificationHelper {
             .setSmallIcon(R.drawable.ic_circle_arrow_down)
             .setContentTitle(context.getString(R.string.app_name))
             .setContentText(context.getString(R.string.downloading_live_streams))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setAutoCancel(false)
             .addAction(
                 NotificationCompat.Action(
@@ -67,7 +67,36 @@ object NotificationHelper {
         return notification
     }
 
-    fun notifyDownloadLiveStreamCompleted(context: Context, message: String): Notification {
+    fun notifyDownloadLiveStreamFinishing(context: Context, message: String, id: Long): Notification {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel(
+                context,
+                context.getString(R.string.live_stream_download_finishing_notification_channel_id),
+                context.getString(R.string.live_stream_download_finishing_notification_channel_name),
+                context.getString(R.string.live_stream_download_finishing_notification_channel_description),
+                NotificationManager.IMPORTANCE_LOW
+
+            )
+        }
+
+        val notification = NotificationCompat.Builder(
+            context,
+            context.getString(R.string.live_stream_download_notification_channel_id)
+        )
+            .setSmallIcon(R.drawable.ic_circle_arrow_down)
+            .setContentTitle(context.getString(R.string.app_name))
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        with(NotificationManagerCompat.from(context)) {
+            notify(id.toInt(), notification)
+        }
+
+        return notification
+    }
+
+    fun notifyDownloadLiveStreamCompleted(context: Context, message: String, id: Long): Notification {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel(
                 context,
@@ -91,7 +120,7 @@ object NotificationHelper {
             .build()
 
         with(NotificationManagerCompat.from(context)) {
-            notify(LIVE_STREAM_COMPLETED_NOTIFICATION_ID++, notification)
+            notify(id.toInt(), notification)
         }
 
         return notification
