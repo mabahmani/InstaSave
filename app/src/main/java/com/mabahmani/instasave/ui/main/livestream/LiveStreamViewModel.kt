@@ -45,7 +45,6 @@ class LiveStreamViewModel @Inject constructor(
                 if (liveStreams.isNullOrEmpty()) {
                     _liveStreamUiState.emit(LiveStreamUiState.EmptyList)
                 } else {
-                    Timber.d("liveStreams %s", liveStreams)
                     liveStreams.forEach {
                         if (DownloadLiveStreamsService.isDownloading(it.id))
                             it.downloadState.value = LiveStream.DownloadState.DOWNLOADING

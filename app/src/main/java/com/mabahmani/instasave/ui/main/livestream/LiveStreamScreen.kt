@@ -58,8 +58,6 @@ fun LiveStreamScreen(
 
     var isRefreshing = false
 
-    Timber.d("LiveStreamScreen %s", state.value)
-
     when(state.value){
         is LiveStreamUiState.ShowLiveStreams ->{
             isRefreshing = false
@@ -68,7 +66,6 @@ fun LiveStreamScreen(
     }
 
     DownloadLiveStreamsService.callBack = { item->
-        Timber.d("DownloadLiveStreamsServicecallBack %s", item)
 
         try {
             list.value.find {

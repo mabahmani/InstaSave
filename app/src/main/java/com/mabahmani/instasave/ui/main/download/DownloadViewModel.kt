@@ -92,7 +92,6 @@ class DownloadViewModel @Inject constructor(
                     _downloadUiState.emit(
                         DownloadUiState.AddToDownload(result.getOrNull() ?: listOf())
                     )
-                    Timber.d("fetchLinkData isSuccess %s", result.getOrNull())
                 } else {
 
                     when (result.exceptionOrNull()) {
@@ -103,8 +102,6 @@ class DownloadViewModel @Inject constructor(
                             DownloadUiState.FetchLinkDataFailed
                         )
                     }
-
-                    Timber.d("fetchLinkData isFailure %s", result.exceptionOrNull())
                 }
 
             }
@@ -142,7 +139,6 @@ class DownloadViewModel @Inject constructor(
                     )
 
                     downloads.forEach {
-                        Timber.d("addToDownloads %s", it)
                         DownloadManager.startDownload(
                             it
                         )

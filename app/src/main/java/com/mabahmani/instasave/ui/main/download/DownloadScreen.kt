@@ -63,11 +63,7 @@ fun DownloadScreen(
 
     val state = viewModel.downloadUiState.collectAsState()
 
-    Timber.d("DownloadScreen %s", state.value)
-
     DownloadManager.progressCallback { fileId, progress ->
-
-        Timber.d("DownloadManager.progressCallback %s %s", fileId, progress)
 
         try {
             list.value.find {
@@ -83,8 +79,6 @@ fun DownloadScreen(
 
     DownloadManager.statusCallback { fileId, downloadStatus ->
 
-        Timber.d("DownloadManager.statusCallback %s %s", fileId, downloadStatus)
-
         try {
             viewModel.updateDownloadStatus(fileId, downloadStatus)
         } catch (ex: Exception) {
@@ -93,8 +87,6 @@ fun DownloadScreen(
     }
 
     DownloadManager.finishCallback { fileId, downloadStatus, filePath, fileName, fileLength ->
-
-        Timber.d("DownloadManager.finishCallback %s %s", fileId, downloadStatus)
 
         try {
             viewModel.updateDownloadInfoStatus(
@@ -372,8 +364,6 @@ fun DownloadScreen(
                         modifier = Modifier
                             .combinedClickable(
                                 onClick = {
-                                    Timber.d("onClick")
-
                                     if (it.status.value != DownloadStatus.COMPLETED) {
                                         if (it.status.value != DownloadStatus.DOWNLOADING && it.status.value != DownloadStatus.CONNECTING) {
                                             DownloadManager.startDownload(it)
@@ -405,7 +395,6 @@ fun DownloadScreen(
 
                                 },
                                 onLongClick = {
-                                    Timber.d("onLongClick")
                                     viewModel.onShowDeleteDialog(it)
                                 }
                             )) {

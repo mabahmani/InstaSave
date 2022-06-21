@@ -117,8 +117,6 @@ class DownloadRepositoryImpl @Inject constructor(
 
             val result = remoteDataSource.getInstagramShortLinkJsonData(finalUrl)
 
-            Timber.d("fetchLinkJsonData %s", result.getOrNull()?.items?.get(0)?.videos)
-
             if (result.isSuccess) {
 
                 val jsonResult = result.getOrNull()

@@ -21,7 +21,6 @@ object DownloadManager {
 
     fun startDownload(download: Download) {
         if (!isInDownloadList(download.fileId)) {
-            Timber.d("startDownload")
             downloadList.add(download)
 
             download.executer = Executors.newSingleThreadExecutor()
@@ -90,8 +89,6 @@ object DownloadManager {
                         }
                     }
 
-                    Timber.d("downloadmanger size %s %s", remainedSize, totalSize)
-
                     if (statusCallback != null) {
                         try {
                             statusCallback!!.invoke(
@@ -105,7 +102,7 @@ object DownloadManager {
 
                     input = connection.inputStream
 
-                    val data = ByteArray(4096)
+                    val data = ByteArray(65536)
                     var count: Int
                     var sum = (totalSize - remainedSize).toFloat()
 
@@ -144,7 +141,6 @@ object DownloadManager {
                     }
 
                 } catch (ex: Exception) {
-                    Timber.d("DownloadManager EX %s", ex)
                     ex.printStackTrace()
                     if (download.status.value == DownloadStatus.PAUSED) {
                         if (statusCallback != null) {
@@ -178,24 +174,6 @@ object DownloadManager {
                     input?.close()
                     output?.close()
                     connection?.disconnect()
-
-                    if (download.status.value != DownloadStatus.PAUSED && download.status.value != DownloadStatus.FAILED && download.status.value != DownloadStatus.DOWNLOADING) {
-                        if (finishCallback != null) {
-                            try {
-                                finishCallback!!.invoke(
-                                    download.fileId,
-                                    DownloadStatus.COMPLETED,
-                                    file?.path.orEmpty(),
-                                    file?.name.orEmpty(),
-                                    file?.length() ?: 0
-                                )
-                            } catch (ex: Exception) {
-                                ex.printStackTrace()
-                            }
-
-                        }
-                    }
-
                     downloadList.remove(download)
                 }
             }
@@ -205,7 +183,6 @@ object DownloadManager {
     }
 
     fun stopDownload(fileId: String) {
-        Timber.d("stopDownload")
         downloadList.find {
             it.fileId == fileId
         }?.apply {

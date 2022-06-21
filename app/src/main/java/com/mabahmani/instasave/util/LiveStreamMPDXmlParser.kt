@@ -140,7 +140,6 @@ object LiveStreamMPDXmlParser {
             if (parser.eventType != XmlPullParser.START_TAG) {
                 continue
             }
-            Timber.d("readSegmentTimeline %s", parser.name)
 
             if (parser.name == "S") {
                 timelines.add(readS(parser))

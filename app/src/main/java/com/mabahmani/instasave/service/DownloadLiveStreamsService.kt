@@ -80,7 +80,6 @@ class DownloadLiveStreamsService : Service() {
     }
 
     private fun cancelDownload(liveId: Long) {
-        Timber.d("cancelDownload %s", liveId)
         val foundedItem = currentDownloadList.find { it.id == liveId }?.apply {
             downloadState.value = LiveStream.DownloadState.MERGING
         }
