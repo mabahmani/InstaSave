@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mabahmani.instasave.R
 
@@ -28,8 +29,10 @@ fun EmptyView(title: String) {
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = title,
-            style = MaterialTheme.typography.subtitle1,
-            color = MaterialTheme.colors.secondary
+            style = MaterialTheme.typography.subtitle2,
+            color = MaterialTheme.colors.secondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
     }
 }

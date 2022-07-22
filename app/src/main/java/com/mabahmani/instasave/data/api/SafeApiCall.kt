@@ -4,6 +4,7 @@ import android.content.Context
 import com.mabahmani.instasave.data.api.response.Failure
 import com.mabahmani.instasave.util.networkConnectionAvailable
 import com.mabahmani.instasave.util.toApiFailureExceptions
+import timber.log.Timber
 
 suspend fun <T> safeApiCall(context: Context, apiCall: suspend () -> T): Result<T> {
     return try {

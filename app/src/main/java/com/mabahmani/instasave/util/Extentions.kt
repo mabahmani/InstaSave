@@ -5,7 +5,9 @@ import android.net.ConnectivityManager
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.mabahmani.instasave.data.api.response.Failure
+import io.ktor.client.call.*
 import io.ktor.client.features.*
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -20,13 +22,17 @@ fun Int?.orZero(): Int{
 
 fun Exception.toApiFailureExceptions() = when (this) {
     is ServerResponseException -> Failure.InternalServerError(this)
-    is ClientRequestException ->
+    is ClientRequestException ->{
         when (this.response.status.value) {
             400 -> Failure.HttpErrorBadRequest(this)
             401 -> Failure.HttpErrorUnauthorized(this)
             403 -> Failure.HttpErrorUnauthorized(this)
             else -> Failure.HttpError(this)
         }
+    }
+    is NoTransformationFoundException ->{
+        Failure.HttpErrorUnauthorized(this)
+    }
     else -> Failure.Error(this)
 }
 

@@ -1,5 +1,6 @@
 package com.mabahmani.instasave.ui.main.download
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.text.format.Formatter
@@ -36,6 +37,8 @@ import com.mabahmani.instasave.domain.model.Download
 import com.mabahmani.instasave.domain.model.enums.DownloadStatus
 import com.mabahmani.instasave.domain.model.enums.MediaType
 import com.mabahmani.instasave.ui.common.EmptyView
+import com.mabahmani.instasave.ui.intro.IntroActivity
+import com.mabahmani.instasave.ui.login.LoginViewModel
 import com.mabahmani.instasave.ui.theme.Ubuntu
 import com.mabahmani.instasave.util.DownloadManager
 import com.mabahmani.instasave.util.timeStampToHumanReadable
@@ -49,7 +52,8 @@ import java.io.File
 @Composable
 fun DownloadScreen(
     sharedLink: String = "",
-    viewModel: DownloadViewModel = hiltViewModel()
+    viewModel: DownloadViewModel = hiltViewModel(),
+    loginViewModel: LoginViewModel = hiltViewModel()
 ) {
 
     LaunchedEffect(true) {
@@ -61,6 +65,7 @@ fun DownloadScreen(
     val inputValue = remember { mutableStateOf(sharedLink) }
     val openCheckUrlDialog = remember { mutableStateOf(false) }
     val openDeleteDialog = remember { mutableStateOf(false) }
+    val openLogoutDialog = remember { mutableStateOf(false) }
     val list = remember { mutableStateOf<List<Download>>(listOf()) }
     val itemToDelete = remember { mutableStateOf<Download?>(null) }
 
@@ -227,6 +232,60 @@ fun DownloadScreen(
         }
     }
 
+    if (openLogoutDialog.value) {
+        Dialog(
+            onDismissRequest = { openLogoutDialog.value = false },
+            DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
+        ) {
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colors.background, RoundedCornerShape(8.dp)),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    modifier = Modifier.padding(16.dp),
+                    text = stringResource(R.string.logout_title),
+                    style = MaterialTheme.typography.h5,
+                    color = MaterialTheme.colors.primary
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(9.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = {
+                            openLogoutDialog.value = false
+                        }
+                    ) {
+                        Text(
+                            text = stringResource(R.string.cancel),
+                            style = MaterialTheme.typography.body2,
+                            color = MaterialTheme.colors.primary
+                        )
+                    }
+
+                    TextButton(
+                        onClick = {
+                            openLogoutDialog.value = false
+                            (context as Activity).finishAffinity()
+                            context.startActivity(Intent(context, IntroActivity::class.java))
+                            loginViewModel.logout()
+                        }
+                    ) {
+                        Text(
+                            text = stringResource(R.string.logout),
+                            style = MaterialTheme.typography.body2,
+                            color = MaterialTheme.colors.primary
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     if (openCheckUrlDialog.value) {
         Dialog(
             onDismissRequest = { openCheckUrlDialog.value = false },
@@ -262,12 +321,33 @@ fun DownloadScreen(
             .fillMaxSize()
             .background(MaterialTheme.colors.background),
     ) {
-        Text(
-            text = stringResource(id = R.string.downloads),
-            style = MaterialTheme.typography.h2,
-            color = MaterialTheme.colors.primary,
-            modifier = Modifier.padding(16.dp)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(id = R.string.downloads),
+                style = MaterialTheme.typography.h2,
+                color = MaterialTheme.colors.primary,
+                modifier = Modifier.padding(16.dp)
+            )
+
+            TextButton(
+                onClick = { openLogoutDialog.value = true },
+                colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_arrow_right_from_bracket),
+                    contentDescription = "",
+                    Modifier
+                        .width(18.dp)
+                        .height(18.dp),
+                    tint = MaterialTheme.colors.primary
+                )
+            }
+        }
+
 
         Divider(color = MaterialTheme.colors.primaryVariant, thickness = 1.dp)
 
@@ -386,7 +466,7 @@ fun DownloadScreen(
                                                         BuildConfig.APPLICATION_ID + ".provider",
                                                         File(it.filePath)
                                                     ),
-                                                   "image/*"
+                                                    "image/*"
                                                 )
                                             }
 
