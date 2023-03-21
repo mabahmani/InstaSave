@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun userLogin(): Boolean {
-        return sharedPreferences.getBoolean(AppConstants.Prefs.USER_IS_LOGGED_IN, false)
+        return sharedPreferences.getBoolean(AppConstants.Prefs.USER_IS_LOGGED_IN, true)
     }
 
     @Composable
@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
     fun BottomNavigation(navController: NavController) {
         val items = listOf(
             //BottomNavItem.Home,
-            //BottomNavItem.Search,
+            BottomNavItem.Search,
             BottomNavItem.Download,
             //BottomNavItem.Story,
             BottomNavItem.LiveStream

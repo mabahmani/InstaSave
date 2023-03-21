@@ -4,6 +4,7 @@ import android.content.Context
 import com.mabahmani.instasave.data.api.ApiService
 import com.mabahmani.instasave.data.api.response.FeedReelsTray
 import com.mabahmani.instasave.data.api.response.Media
+import com.mabahmani.instasave.data.api.response.SearchTagRes
 import com.mabahmani.instasave.data.api.safeApiCall
 import com.mabahmani.instasave.di.IoDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -37,6 +38,14 @@ class RemoteDataSourceImpl @Inject constructor(
         return withContext(ioDispatcher) {
             safeApiCall(context) {
                 apiService.getInstagramMediaJsonData(mediaId)
+            }
+        }
+    }
+
+    override suspend fun searchTag(tag: String, maxId: String): Result<SearchTagRes> {
+        return withContext(ioDispatcher) {
+            safeApiCall(context) {
+                apiService.searchTag(tag, maxId)
             }
         }
     }

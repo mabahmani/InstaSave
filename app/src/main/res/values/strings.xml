@@ -45,4 +45,8 @@
     <string name="logout_title">Log out?</string>
     <string name="logout">Logout</string>
     <string name="unauthorized_msg">Your session has been terminated, you should login again.</string>
+    <string name="search_tag">Search Tag</string>
+    <string name="search_tag_input_hint">Type your tag here…</string>
+    <string name="search">Search</string>
+    <string name="no_search_tags">The search tag result is empty</string>
 </resources>

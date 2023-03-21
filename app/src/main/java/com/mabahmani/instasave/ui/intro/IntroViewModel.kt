@@ -103,7 +103,7 @@ class IntroViewModel @Inject constructor(@ApplicationContext context: Context, p
 
     private fun checkUserIsLoggedIn() {
 
-        userLoggedIn = sharedPreferences.getBoolean(AppConstants.Prefs.USER_IS_LOGGED_IN, false)
+        userLoggedIn = sharedPreferences.getBoolean(AppConstants.Prefs.USER_IS_LOGGED_IN, true)
 
         if (userLoggedIn){
             viewModelScope.launch {
