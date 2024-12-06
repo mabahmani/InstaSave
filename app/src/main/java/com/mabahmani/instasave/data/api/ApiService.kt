@@ -5,6 +5,7 @@ import com.mabahmani.instasave.data.api.response.Media
 import com.mabahmani.instasave.data.api.response.SearchTagRes
 import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import javax.inject.Inject
 
 class ApiService @Inject constructor(private val httpClient: HttpClient) {

@@ -8,8 +8,11 @@ import com.mabahmani.instasave.data.api.response.SearchTagRes
 import com.mabahmani.instasave.data.api.safeApiCall
 import com.mabahmani.instasave.di.IoDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.ktor.http.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 import javax.inject.Inject
 
 class RemoteDataSourceImpl @Inject constructor(
@@ -30,6 +33,25 @@ class RemoteDataSourceImpl @Inject constructor(
         return withContext(ioDispatcher) {
             safeApiCall(context) {
                 apiService.getInstagramShortLinkJsonData(url)
+            }
+        }
+    }
+
+    override suspend fun getInstagramShortLink(url: String): Result<String> {
+        return withContext(ioDispatcher) {
+            var c: HttpURLConnection = URL(url).openConnection() as HttpURLConnection
+            c.requestMethod = "GET"
+            c.instanceFollowRedirects = false
+            c.setRequestProperty(HttpHeaders.UserAgent, "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1")
+            c.connect()
+            if (c.responseCode == HttpURLConnection.HTTP_MOVED_PERM || c.responseCode == HttpURLConnection.HTTP_MOVED_TEMP) {
+                val newURL = c.getHeaderField("Location")
+                c = URL(newURL).openConnection() as HttpURLConnection
+                c.responseMessage
+                Result.success(c.url.toString())
+            }
+            else {
+                Result.success("")
             }
         }
     }

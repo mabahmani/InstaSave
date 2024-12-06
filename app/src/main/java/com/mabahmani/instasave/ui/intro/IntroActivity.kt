@@ -15,6 +15,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -22,15 +23,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mabahmani.instasave.R
 import com.mabahmani.instasave.ui.login.LoginActivity
+import com.mabahmani.instasave.ui.login.LoginViewModel
 import com.mabahmani.instasave.ui.main.MainActivity
 import com.mabahmani.instasave.ui.theme.Cookie
 import com.mabahmani.instasave.ui.theme.InstaSaveTheme
+import com.mabahmani.instasave.ui.theme.Ubuntu
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 
@@ -39,6 +45,9 @@ import timber.log.Timber
 class IntroActivity : ComponentActivity() {
 
     private val viewModel: IntroViewModel by viewModels()
+
+    private val loginViewModel: LoginViewModel by viewModels()
+
 
     @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +70,8 @@ class IntroActivity : ComponentActivity() {
                 }
 
                 val visible = remember { mutableStateOf(false) }
+
+                val inputValue = remember { mutableStateOf("") }
 
                 when (state.value) {
 
@@ -108,6 +119,7 @@ class IntroActivity : ComponentActivity() {
 
                 AnimatedVisibility(visible = visible.value) {
                     Column(
+                        verticalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier
                             .fillMaxSize()
                             .background(MaterialTheme.colors.background)
@@ -127,6 +139,68 @@ class IntroActivity : ComponentActivity() {
                                 title.value,
                                 buttonText.value
                             )
+
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+
+                                BasicTextField(
+                                    value = inputValue.value,
+                                    onValueChange = {
+                                        inputValue.value = it
+                                    },
+                                    textStyle = TextStyle(
+                                        color = MaterialTheme.colors.primary,
+                                        fontSize = 12.sp,
+                                        fontFamily = Ubuntu,
+                                        fontWeight = FontWeight.Light,
+                                    ),
+                                    modifier = Modifier
+                                        .background(color = MaterialTheme.colors.primaryVariant)
+                                        .height(48.dp)
+                                        .fillMaxWidth(),
+                                    decorationBox = {
+                                        if (inputValue.value.isEmpty()) {
+                                            Text(
+                                                text = stringResource(id = R.string.cookie_input_hint),
+                                                style = MaterialTheme.typography.caption,
+                                                color = MaterialTheme.colors.secondary,
+                                            )
+                                        }
+
+                                        it()
+                                    },
+                                    cursorBrush = SolidColor(MaterialTheme.colors.secondary),
+                                    maxLines = 1
+                                )
+
+                                Button(
+                                    onClick = {
+                                        loginViewModel.saveUserCookies(inputValue.value)
+                                        startActivity(
+                                            Intent(
+                                                this@IntroActivity,
+                                                MainActivity::class.java
+                                            )
+                                        )
+                                        finish()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+                                    border = BorderStroke(1.dp, MaterialTheme.colors.primary),
+                                    elevation = null,
+                                ) {
+                                    Text(
+                                        text = "Set Cookie",
+                                        style = MaterialTheme.typography.h6,
+                                        color = MaterialTheme.colors.primary,
+                                        modifier = Modifier.padding(horizontal = 32.dp)
+                                    )
+                                }
+                            }
+
                         }
                     }
                 }

@@ -380,6 +380,7 @@ fun LiveStreamScreen(
                             is LiveStreamUiState.NetworkError -> EmptyView(title = stringResource(id = R.string.network_error))
                             is LiveStreamUiState.EmptyList -> EmptyView(title = stringResource(id = R.string.no_live_streams))
                             is LiveStreamUiState.Unauthorized -> EmptyView(title = stringResource(id = R.string.unauthorized_msg))
+                            is LiveStreamUiState.Error -> EmptyView(title = stringResource(id = R.string.something_went_wrong) + " " + (state.value as LiveStreamUiState.Error).message)
                             else -> EmptyView(title = stringResource(id = R.string.something_went_wrong))
                         }
                     }

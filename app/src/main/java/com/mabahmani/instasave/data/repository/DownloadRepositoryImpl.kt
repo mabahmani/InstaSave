@@ -109,10 +109,12 @@ class DownloadRepositoryImpl @Inject constructor(
         }
 
         else{
-            var finalUrl = url
-
-            if (url.contains('?')){
-                finalUrl = url.substring(0, url.indexOf('?'))
+            var finalUrl = remoteDataSource.getInstagramShortLink(url).getOrNull().toString()
+            if (finalUrl.isEmpty()) {
+                finalUrl = url
+            }
+            if (finalUrl.contains('?')){
+                finalUrl = finalUrl.substring(0, finalUrl.indexOf('?')).replace("reel","p")
             }
 
             val result = remoteDataSource.getInstagramShortLinkJsonData(finalUrl)
